@@ -277,15 +277,16 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 ##################################### Load in PM2.5 data ############################################################# 
    
 ####### 5. Load pm2.5 data from github repo
-pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.csv")
-   
+ ## previous pm2.5 data without sep-aug 2022 data -- pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.csv")
+ pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.HybridPM25_alldates.csv")   
 ###### 6. CLEAN pm2.5 data
 
 # 6a. convert month column format to month_year 
-   pm2.5_dates <- pm2.5  %>%
+   pm2.5_dates <- pm2.5 %>%
      mutate(
-       Month_Year = format(as.Date(month, format = "%m/%d/%Y"), "%b-%y")
+       Month_Year = format(ymd(month), "%b-%y")
      )
+   
 # 6b. Change Tierra Del Sol to Tierra Del Sol SDAA to match clean_sdnhm_noNABIN dataframe before merging
    pm2.5_dates <- pm2.5_dates %>%
      mutate(Exact.Site = recode(Exact.Site,
