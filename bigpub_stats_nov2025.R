@@ -320,27 +320,31 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    site_month_order_df <- site_month_order_div_df %>%                           # add pm2.5 data
      left_join(clean_pm2.5, by = c("Exact.Site", "Month_Year"))
    
-###########################################################################################################################
-################################## Insect diversity and PM2.5 data visualization ############################################
-   
-######## 7. Plot shannon div with pm2.5 across dates for each site
-   
-# 7a. convert month_date into real dates and put them in chronological order
-   
+   #convert month_date into real dates and put them in chronological order
    site_month_dataUSE <- site_month_dataUSE %>%
      mutate(
        Month_Year_date = parse_date_time(Month_Year, "b-y") # "Aug-22" is a real date
      ) %>%
      arrange(Month_Year_date) %>%
-     mutate(Month_Year = factor(Month_Year, levels = unique(Month_Year)))
+     mutate(Month_Year = factor(Month_Year, levels = unique(Month_Year)))      
    
-# 7b. compute scaling factor for PM2.5 so that it is correctly positioned (vertically wise) on right y-axis.
+####################################################################################################################################
+##################################Load in SMOKE and metDATA#######################################################
+
+#a.    
+   
+###########################################################################################################################
+################################## Insect diversity and PM2.5 data visualization ############################################
+   
+######## 7. Plot shannon div with pm2.5 across dates for each site
+   
+# 7a. compute scaling factor for PM2.5 so that it is correctly positioned (vertically wise) on right y-axis.
    max_shannon <- max(site_month_dataUSE$Shannon.Diversity, na.rm = TRUE)
    max_pm25    <- max(site_month_dataUSE$GWRPM25.ugm.3,      na.rm = TRUE)
    
    scale_factor <- max_shannon / max_pm25
    
-# 7c.   create facetted dual-axis plot
+# 7b.   create facetted dual-axis plot
    p_shann <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
      # Shannon diversity — solid line
      geom_line(
@@ -381,7 +385,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
        legend.position = "bottom"
      )
 
-# 7d. scatterplot 
+# 7c. scatterplot 
     ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Shannon.Diversity, color = Exact.Site)) +
       geom_point(
         aes(group = Exact.Site)
@@ -394,7 +398,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
       theme_classic()
    
 
-# 7e. scatterplot for dip, lep, coleo
+# 7d. scatterplot for dip, lep, coleo
       ## Diptera: 
           site_month_order_df %>%
             mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
@@ -428,7 +432,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
             theme_classic() +
             labs(color = "")
 
-# 7f. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
+# 7e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
           
   # Define your 4 focal orders + their colors
   focal_colors <- c(
