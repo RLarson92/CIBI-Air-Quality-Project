@@ -336,7 +336,24 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    
 #b. Read in grid_MET csv 
    METdata <- read.csv("gridMET_SDNHMsites_monthlyvalues_11feb26.csv")
+   METdata <- rename(METdata, site.name = site_name)
    
+#c. combine gridMET and SMOKE datasets into a single dataframe
+   s.met.data <- SMOKEdata %>%
+     left_join(METdata, by = c("site.name", "date.on.trap", "date.off.trap"))
+   #change month.x column from year-date-day format to month-year format
+   s.met.data <- s.met.data %>%
+     mutate(Month_Year = format(as.Date(month.x), "%b-%y"))
+   #remove duplicate month column
+   s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.y", "date.on.trap", "date.off.trap"))
+   #rename column to Exact.Site to match PM2.5 and insect diversity dataset
+   s.met.data <- rename(s.met.data, Exact.Site = site.name)
+   #move Month_Year column to be right after Exact.Site column
+   s.met.data <- relocate(s.met.data, Month_Year, .after = Exact.Site)
+                           
+   
+   #Correlation Matrix 
+   cor <- cor(s.met.data[])
 ###########################################################################################################################
 ################################## Insect diversity and PM2.5 data visualization ############################################
    
