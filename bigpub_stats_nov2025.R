@@ -351,8 +351,15 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    #move Month_Year column to be right after Exact.Site column
    s.met.data <- relocate(s.met.data, Month_Year, .after = Exact.Site)
                            
+##########################################################################################################################################################
+############################################## Integrating all abiotic variables ##################################
+   # rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
    
-   #Correlation Matrix 
+   # join s.met.data and clean_pm2.5 dataset
+   
+   # remove columns that are unecessary for correlation matrix
+   
+   #Run a Correlation Matrix 
    cor <- cor(s.met.data[])
 ###########################################################################################################################
 ################################## Insect diversity and PM2.5 data visualization ############################################
