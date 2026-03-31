@@ -18,7 +18,7 @@ library(purrr)
 
 
 #########################################################################################
-############################### read in data ################################################
+############################### read in barcode data ################################################
 
 ####### 1. Load BOLD data 
 
@@ -326,10 +326,11 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
        Month_Year_date = parse_date_time(Month_Year, "b-y") # "Aug-22" is a real date
      ) %>%
      arrange(Month_Year_date) %>%
-     mutate(Month_Year = factor(Month_Year, levels = unique(Month_Year)))      
+     mutate(Month_Year = factor(Month_Year, levels = unique(Month_Year))) %>%
+     rename(PM2.5 = GWRPM25.ugm.3)
    
 ####################################################################################################################################
-##################################Load in SMOKE and metDATA#######################################################
+################################## Load in SMOKE and metDATA#######################################################
 
 #a. Read in Smoke csv
    SMOKEdata <- read.csv("hms_smoke_SDNHMsites_11feb2026.csv")
@@ -352,18 +353,24 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    s.met.data <- relocate(s.met.data, Month_Year, .after = Exact.Site)
    
 ##########################################################################################################################################################
-###################################### combining MET, Smoke, and Pm2.5 datasets #########################################################################
+###################################### combining MET, Smoke, and PM2.5 datasets #########################################################################
 
 # a. rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
    clean_pm2.5 <- clean_pm2.5 %>%
      mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
    
-   # join s.met.data and clean_pm2.5 dataset
+# b. join s.met.data and clean_pm2.5 dataset
    abiotic.data <- clean_pm2.5 %>%
      left_join(s.met.data, by = c("Month_Year", "Exact.Site"))
+# c. remove rows with NA values created when combining both dataframes. 
+   clean.abiotic.data <- na.omit(abiotic.data)
    # remove columns that are necessary for correlation matrix
+   clean.abiotic.data <- clean.abiotic.data[, c(1:3, 5, 11, 16, 19)]
+   #switch column order to be cleaner
+   clean.abiotic.data <- clean.abiotic.data %>%
+     relocate("Month_Year", .before = "GWRPM25.ugm.3") %>%
+     rename(PM2.5 = GWRPM25.ugm.3)
    
-                           
 ##########################################################################################################################################################
 ############################################## Correlation matrix of abiotic variables ##################################
    
@@ -389,10 +396,52 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    corrplot(Scor, tl.cex = 0.6, method = 'number') ## think need to choose between 'n_smoke' (number of smoke days in sampling period) and 'per_smoke' which is ... ? 
 
 #3. CORR combining smoke and meteorological datasets
-   S.M.cor <- cor(s.met.data[, c(4, 10, 11, 15, 18)], method = "pearson")
+  
+# 3a.  S.M.cor <- cor(s.met.data[, c(4, 10, 11, 15, 18)], method = "pearson")
    corrplot(S.M.cor, tl.cex = 0.6, method = 'number')
    ## as of now, I want to keep 'n_smoke', 'precipitation_accumulation_mm', 'max_relative_humidity_mean', 'max_air_temperature_mean_K', 'wind_speed_ms_mean'. None of these are overly correlated, and I think they ahve most important biological significance. 
+
+#4. CORR using clean.abiotic.data df - these are variables I want to use in model. 
+   a.v.corr <- cor(clean.abiotic.data[, 3:7], method = "pearson")
+   corrplot(a.v.corr, tl.cex = 0.6, method = 'number')
+
    
+###################################################################################################################################################
+####################################### combining abiotic and biotic data into a single dataframe ###################################################
+
+#1.  combining clean.abiotic.data and site_month_dataUSE dataframes - this will be used in stats
+
+# 1a. rename Exact.Site in Site_month_dataUSE df to match abbreviations in clean.abiotic.data df. 
+   site_month_dataUSE <- site_month_dataUSE %>%
+     mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
+
+# 1b. Merge two dataframes 
+   stats_df <- site_month_dataUSE %>%
+     left_join(clean.abiotic.data, by = c("Exact.Site", "Month_Year"))
+   
+# 1c. remove any NAs because no abiotic data associated with dates insect specimens were collected 
+   stats_df <- na.omit(stats_df)
+
+# 1d. remove columns i dont want that are repeated (PM2.5 and dates)
+  stats_df <- subset(stats_df, select = -c(PM2.5.x, Month_Year_date))
+   
+# 1d. Histograms to see distribution of each variable.
+   
+   #PM2.5 
+   hist(stats_df$PM2.5.y) #rather normally distributed 
+   
+   #n_smoke 
+   hist(stats_df$n_smoke) #R skewed distribution
+   
+   #precip_accum
+   hist(stats_df$precipitation_accumulation_mm) ## R skewed distribution
+   
+   #max_air_temp_mean
+   hist(stats_df$max_air_temperature_mean_K) ## rather normally distributed
+   
+   #wind_speed_mean
+   hist(stats_df$wind_speed_ms_mean) # rather normally distributed
+
 ###########################################################################################################################
 ################################## Insect diversity and PM2.5 data visualization ############################################
    
