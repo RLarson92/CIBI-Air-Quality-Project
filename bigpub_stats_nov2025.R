@@ -352,8 +352,36 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    s.met.data <- relocate(s.met.data, Month_Year, .after = Exact.Site)
                            
 ##########################################################################################################################################################
-############################################## Integrating all abiotic variables ##################################
-   # rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
+############################################## Correlation matrix of abiotic variables ##################################
+   
+#1. CORR FOR METEOROLOGICAL DATASET
+   
+# 1a.  correlation of meteorological dataset excluding first few columns with dates on/off, site names, etc. 
+   METcor <- cor(METdata[, 5:14], method ="pearson")
+   #visualize correlation matrix (two different corr matrices)
+   corrplot(METcor, tl.cex = 0.6, method = 'number') #  tl.cex reduces text size. method = number gives correlation numbers rather than different sized color dots. 
+      # max/min humidity, max/min air temp, and mean vapor pressure deficit are the most correlated. 
+      # think about dropping 'mean vapor pressure deficit', min temp, min relative humidity, specific humidity mean.
+# 1cb correlation removing some of the variables included previously that were too correlated   
+   METcor.2 <- cor(METdata[, c(6,7,9,11,14)]) #remove 9 if dont want surface downswelling shortwave flux
+   #visualize
+   corrplot(METcor.2, tl.cex = 0.6, method = 'number') 
+  # kept precipitation accumulation, max rel humidity mean, max air temp mean, wind speed mean (prefer to exclude surface downswelling shortwave flux)
+
+   
+#2. CORR FOR SMOKE DATASET
+
+# 2a. Correlation matrix for smoke data selecting columns that are appropriate 
+   Scor <- cor(SMOKEdata[, 6:11], method = "pearson")
+   corrplot(Scor, tl.cex = 0.6, method = 'number') ## think need to choose between 'n_smoke' (number of smoke days in sampling period) and 'per_smoke' which is ... ? 
+
+#3. CORR combining smoke and meteorological datasets
+   S.M.cor <- cor(s.met.data[, c(4, 10, 11, 15, 18)], method = "pearson")
+   corrplot(S.M.cor, tl.cex = 0.6, method = 'number')
+   ## as of now, I want to keep 'n_smoke', 'precipitation_accumulation_mm', 'max_relative_humidity_mean', 'max_air_temperature_mean_K', 'wind_speed_ms_mean'. None of these are overly correlated, and I think they ahve most important biological significance. 
+   
+   
+    # rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
    
    # join s.met.data and clean_pm2.5 dataset
    
