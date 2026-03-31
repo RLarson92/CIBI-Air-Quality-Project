@@ -350,6 +350,19 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    s.met.data <- rename(s.met.data, Exact.Site = site.name)
    #move Month_Year column to be right after Exact.Site column
    s.met.data <- relocate(s.met.data, Month_Year, .after = Exact.Site)
+   
+##########################################################################################################################################################
+###################################### combining MET, Smoke, and Pm2.5 datasets #########################################################################
+
+# a. rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
+   clean_pm2.5 <- clean_pm2.5 %>%
+     mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
+   
+   # join s.met.data and clean_pm2.5 dataset
+   abiotic.data <- clean_pm2.5 %>%
+     left_join(s.met.data, by = c("Month_Year", "Exact.Site"))
+   # remove columns that are necessary for correlation matrix
+   
                            
 ##########################################################################################################################################################
 ############################################## Correlation matrix of abiotic variables ##################################
@@ -380,15 +393,6 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    corrplot(S.M.cor, tl.cex = 0.6, method = 'number')
    ## as of now, I want to keep 'n_smoke', 'precipitation_accumulation_mm', 'max_relative_humidity_mean', 'max_air_temperature_mean_K', 'wind_speed_ms_mean'. None of these are overly correlated, and I think they ahve most important biological significance. 
    
-   
-    # rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
-   
-   # join s.met.data and clean_pm2.5 dataset
-   
-   # remove columns that are unecessary for correlation matrix
-   
-   #Run a Correlation Matrix 
-   cor <- cor(s.met.data[])
 ###########################################################################################################################
 ################################## Insect diversity and PM2.5 data visualization ############################################
    
