@@ -431,9 +431,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 # 1c. remove any NAs because no abiotic data associated with dates insect specimens were collected 
    stats_df <- na.omit(stats_df)
 
-# 1d. remove columns i dont want that are repeated (PM2.5 and dates)
-  stats_df <- subset(stats_df, select = -c(PM2.5.x, Month_Year_date))
-  ## ***** export dataframe
+# 1d. #export dataframe
   write.csv(stats_df, file = "/home/ehornalowell/Documents/stats_df.csv") 
   
 # 1d. HISTOGRAMS to see distribution of each variable.
