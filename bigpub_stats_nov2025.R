@@ -234,10 +234,11 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 
 # 4a (iii). Calculating abundance for each month_year * exact.site * order * BIN * count
     abund.bin.order_df <- clean_sdnhm_noNABIN %>%
-      filter(Order %in% c("Diptera", "Hymenoptera", "Lepidoptera", "Hemiptera", "Coleoptera")) %>%
+      filter(Order %in% c("Diptera", "Hymenoptera", "Lepidoptera", "Hemiptera", "Coleoptera")) %>% #filter out the five specified orders and use them when calling Order for the rest of code chunk.
       group_by(Exact.Site, Month_Year, Order, BIN) %>%
       summarize(Abundnace = n(),
-                .groups = "drop")
+                .groups = "drop") 
+    ##### USE THIS to build DF for RL to run models for statistical analyses ######################
     
 # 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
    spr <- clean_sdnhm_noNABIN %>%
@@ -364,7 +365,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 ###################################### combining MET, Smoke, and PM2.5 datasets #########################################################################
 
 # a. rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
-   clean_pm2.5 <- clean_pm2.5 %>%
+   #clean_pm2.5 <- clean_pm2.5 %>%
      mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
    
 # b. join s.met.data and clean_pm2.5 dataset
@@ -420,11 +421,11 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 #1.  combining clean.abiotic.data and site_month_dataUSE dataframes - this will be used in stats
 
 # 1a. rename Exact.Site in Site_month_dataUSE df to match abbreviations in clean.abiotic.data df. 
-   site_month_dataUSE <- site_month_dataUSE %>%
+   abund.bin.order_df <- abund.bin.order_df %>%
      mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
 
 # 1b. Merge two dataframes 
-   stats_df <- site_month_dataUSE %>%
+   stats_df <- abund.bin.order_df %>%
      left_join(clean.abiotic.data, by = c("Exact.Site", "Month_Year"))
    
 # 1c. remove any NAs because no abiotic data associated with dates insect specimens were collected 
