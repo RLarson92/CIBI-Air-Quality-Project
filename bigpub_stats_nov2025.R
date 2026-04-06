@@ -14,6 +14,7 @@ library(ggplot2) # figs
 library(vegan) # shannon diversity calculation
 library(lubridate) # formatting dates 
 library(purrr)
+library(corrplot) # correlation matrix visualizations
 
 
 
@@ -72,7 +73,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
     clean_sdnhm_noNABIN <- no.NA.BINs_month.year %>%
       select(-c(Project.Code, Identifier, Collectors, Collection.Date.y, Elev, Collection.Date.Accuracy, Habitat, Sampling.Protocol))
 
-    
+# 2g. Dataframe - counts, order, site, month (forAbundance only)    
     
 
 ##########################################################################################################################
@@ -230,7 +231,13 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
       group_by(Exact.Site, Month_Year, Order) %>%
       summarize(Abundance = n(),
                 .groups = "drop")
-    
+
+# 4a (iii). Calculating abundance for each month_year * exact.site * order * BIN * count
+    abund.bin.order_df <- clean_sdnhm_noNABIN %>%
+      filter(Order %in% c("Diptera", "Hymenoptera", "Lepidoptera", "Hemiptera", "Coleoptera")) %>%
+      group_by(Exact.Site, Month_Year, Order, BIN) %>%
+      summarize(Abundnace = n(),
+                .groups = "drop")
     
 # 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
    spr <- clean_sdnhm_noNABIN %>%
@@ -279,7 +286,8 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 ####### 5. Load pm2.5 data from github repo
  ## previous pm2.5 data without sep-aug 2022 data -- pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.csv")
  pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.HybridPM25_alldates.csv")   
-###### 6. CLEAN pm2.5 data
+
+   ###### 6. CLEAN pm2.5 data
 
 # 6a. convert month column format to month_year 
    pm2.5_dates <- pm2.5 %>%
@@ -365,7 +373,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 # c. remove rows with NA values created when combining both dataframes. 
    clean.abiotic.data <- na.omit(abiotic.data)
    # remove columns that are necessary for correlation matrix
-   clean.abiotic.data <- clean.abiotic.data[, c(1:3, 5, 11, 16, 19)]
+   clean.abiotic.data <- clean.abiotic.data[, c(1:3, 5, 11:13, 16, 19)]
    #switch column order to be cleaner
    clean.abiotic.data <- clean.abiotic.data %>%
      relocate("Month_Year", .before = "GWRPM25.ugm.3") %>%
@@ -382,11 +390,11 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    corrplot(METcor, tl.cex = 0.6, method = 'number') #  tl.cex reduces text size. method = number gives correlation numbers rather than different sized color dots. 
       # max/min humidity, max/min air temp, and mean vapor pressure deficit are the most correlated. 
       # think about dropping 'mean vapor pressure deficit', min temp, min relative humidity, specific humidity mean.
-# 1cb correlation removing some of the variables included previously that were too correlated   
-   METcor.2 <- cor(METdata[, c(6,7,9,11,14)]) #remove 9 if dont want surface downswelling shortwave flux
+# 1b: correlation removing some of the variables included previously that were too correlated   
+   METcor.2 <- cor(METdata[, c(6,7,8,11,14)]) #remove 9 if dont want surface downswelling shortwave flux
    #visualize
    corrplot(METcor.2, tl.cex = 0.6, method = 'number') 
-  # kept precipitation accumulation, max rel humidity mean, max air temp mean, wind speed mean (prefer to exclude surface downswelling shortwave flux)
+  # kept precipitation accumulation, max/min rel humidity mean, min rel humidity, max air temp mean, wind speed mean
 
    
 #2. CORR FOR SMOKE DATASET
@@ -402,7 +410,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    ## as of now, I want to keep 'n_smoke', 'precipitation_accumulation_mm', 'max_relative_humidity_mean', 'max_air_temperature_mean_K', 'wind_speed_ms_mean'. None of these are overly correlated, and I think they ahve most important biological significance. 
 
 #4. CORR using clean.abiotic.data df - these are variables I want to use in model. 
-   a.v.corr <- cor(clean.abiotic.data[, 3:7], method = "pearson")
+   a.v.corr <- cor(clean.abiotic.data[, 3:9], method = "pearson")
    corrplot(a.v.corr, tl.cex = 0.6, method = 'number')
 
    
@@ -771,4 +779,8 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
     scale_color_manual(values = focal_colors) +
     theme_classic() +
     labs(color = "Order")    
+  
+  site_month_order_df %>%
+  ggplot(aes(x = Order, y = Abundance)) +
+    geom_bar(stat = "identity")
   
