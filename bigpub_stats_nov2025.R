@@ -238,7 +238,9 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
       group_by(Exact.Site, Month_Year, Order, BIN) %>%
       summarize(Abundnace = n(),
                 .groups = "drop") 
+    ##################################
     ##### USE THIS to build DF for RL to run models for statistical analyses ######################
+    ######################################
     
 # 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
    spr <- clean_sdnhm_noNABIN %>%
@@ -432,7 +434,12 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    stats_df <- na.omit(stats_df)
 
 # 1d. #export dataframe
-  write.csv(stats_df, file = "/home/ehornalowell/Documents/stats_df.csv") 
+   dir.create("data", showWarnings = FALSE)
+   
+   write.csv(stats_df,
+             file = "data/stats_df.csv",
+             row.names = FALSE)
+
   
 # 1d. HISTOGRAMS to see distribution of each variable.
    
@@ -782,4 +789,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
   site_month_order_df %>%
   ggplot(aes(x = Order, y = Abundance)) +
     geom_bar(stat = "identity")
+  
+  x <- stats_df %>%
+    filter(Exact.Site == "TDS", precipitation_accumulation_mm > 0)
   
