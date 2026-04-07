@@ -432,7 +432,12 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    stats_df <- na.omit(stats_df)
 
 # 1d. #export dataframe
-  write.csv(stats_df, file = "/home/ehornalowell/Documents/stats_df.csv") 
+   dir.create("data", showWarnings = FALSE)
+   
+   write.csv(abund.bin.order_df,
+             file = "data/stats_df.csv",
+             row.names = FALSE)
+
   
 # 1d. HISTOGRAMS to see distribution of each variable.
    
