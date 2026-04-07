@@ -436,7 +436,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 # 1d. #export dataframe
    dir.create("data", showWarnings = FALSE)
    
-   write.csv(abund.bin.order_df,
+   write.csv(stats_df,
              file = "data/stats_df.csv",
              row.names = FALSE)
 
@@ -789,4 +789,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
   site_month_order_df %>%
   ggplot(aes(x = Order, y = Abundance)) +
     geom_bar(stat = "identity")
+  
+  x <- stats_df %>%
+    filter(Exact.Site == "TDS", precipitation_accumulation_mm > 0)
   
