@@ -288,7 +288,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    
 ####### 5. Load pm2.5 data from github repo
  ## previous pm2.5 data without sep-aug 2022 data -- pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.csv")
- pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/SDNHM.sites_V5GL0502.HybridPM25_alldates.csv")   
+ pm2.5 <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/data/abiotic_var/SDNHM.sites_V5GL0502.HybridPM25_alldates.csv")   
 
    ###### 6. CLEAN pm2.5 data
 
