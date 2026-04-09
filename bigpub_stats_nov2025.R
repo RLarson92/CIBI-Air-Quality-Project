@@ -344,10 +344,10 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 ################################## Load in SMOKE and metDATA#######################################################
 
 #a. Read in Smoke csv
-   SMOKEdata <- read.csv("hms_smoke_SDNHMsites_11feb2026.csv")
+   SMOKEdata <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/data/abiotic_var/hms_smoke_SDNHMsites_11feb2026.csv")
    
 #b. Read in grid_MET csv 
-   METdata <- read.csv("gridMET_SDNHMsites_monthlyvalues_11feb26.csv")
+   METdata <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/data/abiotic_var/gridMET_SDNHMsites_monthlyvalues_11feb26.csv")
    METdata <- rename(METdata, site.name = site_name)
    
 #c. combine gridMET and SMOKE datasets into a single dataframe
