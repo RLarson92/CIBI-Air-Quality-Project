@@ -358,7 +358,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    s.met.data <- s.met.data %>%
      mutate(Month_Year = format(as.Date(month.x), "%b-%y"))
    #remove duplicate month column
-   s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.x", "date.on.trap", "date.off.trap"))
+   s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.x", "n_days.y", "date.on.trap", "date.off.trap"))
    #rename column to Exact.Site to match PM2.5 and insect diversity dataset
    s.met.data <- rename(s.met.data, Exact.Site = site.name)
    #move Month_Year column to be right after Exact.Site column
@@ -368,16 +368,16 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 ###################################### combining MET, Smoke, and PM2.5 datasets #########################################################################
 
 # a. rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
-   #clean_pm2.5 <- clean_pm2.5 %>%
-     #mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
+   clean_pm2.5 <- clean_pm2.5 %>%
+     mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
    
 # b. join s.met.data and clean_pm2.5 dataset
    abiotic.data <- clean_pm2.5 %>%
      left_join(s.met.data, by = c("Month_Year", "Exact.Site"))
 # c. remove rows with NA values created when combining both dataframes. 
    clean.abiotic.data <- na.omit(abiotic.data)
-   # remove columns that are necessary for correlation matrix
-   clean.abiotic.data <- clean.abiotic.data[, c(1:3, 5, 11:13, 16, 19)]
+   # remove columns that are not necessary for correlation matrix
+   clean.abiotic.data <- clean.abiotic.data[, c(1:4, 10:12, 15, 18)]
    #switch column order to be cleaner
    clean.abiotic.data <- clean.abiotic.data %>%
      relocate("Month_Year", .before = "GWRPM25.ugm.3") %>%
@@ -408,7 +408,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    corrplot(Scor, tl.cex = 0.6, method = 'number') ## think need to choose between 'n_smoke' (number of smoke days in sampling period) and 'per_smoke' which is ... ? 
 
 #3. CORR combining smoke and meteorological datasets
-   S.M.cor <- cor(s.met.data[, c(4, 10, 11, 15, 18)], method = "pearson")
+   S.M.cor <- cor(s.met.data[, c(3, 9:11, 13:15, 17)], method = "pearson")
    corrplot(S.M.cor, tl.cex = 0.6, method = 'number')
    ## as of now, I want to keep 'n_smoke', 'precipitation_accumulation_mm', 'max_relative_humidity_mean', 'max_air_temperature_mean_K', 'wind_speed_ms_mean'. None of these are overly correlated, and I think they ahve most important biological significance. 
 
@@ -423,8 +423,8 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 #1.  combining clean.abiotic.data and site_month_dataUSE dataframes - this will be used in stats
 
 # 1a. rename Exact.Site in Site_month_dataUSE df to match abbreviations in clean.abiotic.data df. 
-   abund.bin.order_df <- abund.bin.order_df %>%
-     mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
+   #abund.bin.order_df <- abund.bin.order_df %>%
+     #mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
 
 # 1b. Merge two dataframes 
    stats_df <- abund.bin.order_df %>%
