@@ -73,7 +73,8 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
     clean_sdnhm_noNABIN <- no.NA.BINs_month.year %>%
       select(-c(Project.Code, Identifier, Collectors, Collection.Date.y, Elev, Collection.Date.Accuracy, Habitat, Sampling.Protocol))
 
-# 2g. Dataframe - counts, order, site, month (forAbundance only)    
+    
+    
     
 
 ##########################################################################################################################
@@ -242,46 +243,46 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
     ##### USE THIS to build DF for RL to run models for statistical analyses ######################
     ######################################
     
-# 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
-   spr <- clean_sdnhm_noNABIN %>%
-     group_by(Exact.Site, Month_Year) %>%
-     summarize(Species_Richness = n_distinct(BIN),
-               .groups = "drop")
-   
-   # joining column back to original dataframe clean_sdnhm_noNABIN
-   clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
-   left_join(spr, by = c("Exact.Site", "Month_Year"))
-
-# 4b (ii). Calculating Species Richness for every unique month_year * exact.site combination for each Order
-   spr_orders <- clean_sdnhm_noNABIN %>%
-     group_by(Exact.Site, Month_Year, Order) %>%
-     summarize(Species_Richness = n_distinct(BIN),
-               .groups = "drop") 
-   
-   
-# 4c (i). Calculating Shannon Diversity Index using vegan() pacakage
-   sdiv <- clean_sdnhm_noNABIN %>%
-     #count individuals per bin per site per month
-     group_by(Exact.Site, Month_Year, BIN) %>%
-     summarise(BIN_Abundance = n(), 
-               .groups = "drop") %>%
-     #now calculate shannon per site * month 
-     group_by(Exact.Site, Month_Year) %>%
-     summarise(Shannon.Diversity = diversity(BIN_Abundance, index = "shannon"),
-               .groups = "drop")
-
-  # add shannon diversity index to clean_sdnhm_noNABIN dataframe 
-   clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
-     left_join(sdiv, by = c("Exact.Site", "Month_Year"))
-
-# 4c (ii). Calculating Shannon.Diversity Index for month_year * exact.site combination for each Order
-   sdiv_orders <- clean_sdnhm_noNABIN %>%
-     group_by(Exact.Site, Month_Year, Order, BIN) %>%
-     summarise(BIN_abundance = n(),
-               .groups = "drop") %>%
-     group_by(Exact.Site, Month_Year, Order) %>%
-     summarise(Shannon_Diversity = diversity(BIN_abundance, index = "shannon"),
-               .groups = "drop")
+# # 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
+#    spr <- clean_sdnhm_noNABIN %>%
+#      group_by(Exact.Site, Month_Year) %>%
+#      summarize(Species_Richness = n_distinct(BIN),
+#                .groups = "drop")
+#    
+#    # joining column back to original dataframe clean_sdnhm_noNABIN
+#    clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
+#    left_join(spr, by = c("Exact.Site", "Month_Year"))
+# 
+# # 4b (ii). Calculating Species Richness for every unique month_year * exact.site combination for each Order
+#    spr_orders <- clean_sdnhm_noNABIN %>%
+#      group_by(Exact.Site, Month_Year, Order) %>%
+#      summarize(Species_Richness = n_distinct(BIN),
+#                .groups = "drop") 
+#    
+#    
+# # 4c (i). Calculating Shannon Diversity Index using vegan() pacakage
+#    sdiv <- clean_sdnhm_noNABIN %>%
+#      #count individuals per bin per site per month
+#      group_by(Exact.Site, Month_Year, BIN) %>%
+#      summarise(BIN_Abundance = n(), 
+#                .groups = "drop") %>%
+#      #now calculate shannon per site * month 
+#      group_by(Exact.Site, Month_Year) %>%
+#      summarise(Shannon.Diversity = diversity(BIN_Abundance, index = "shannon"),
+#                .groups = "drop")
+# 
+#   # add shannon diversity index to clean_sdnhm_noNABIN dataframe 
+#    clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
+#      left_join(sdiv, by = c("Exact.Site", "Month_Year"))
+# 
+# # 4c (ii). Calculating Shannon.Diversity Index for month_year * exact.site combination for each Order
+#    sdiv_orders <- clean_sdnhm_noNABIN %>%
+#      group_by(Exact.Site, Month_Year, Order, BIN) %>%
+#      summarise(BIN_abundance = n(),
+#                .groups = "drop") %>%
+#      group_by(Exact.Site, Month_Year, Order) %>%
+#      summarise(Shannon_Diversity = diversity(BIN_abundance, index = "shannon"),
+#                .groups = "drop")
 
 ######################################################################################################################
 ##################################### Load in PM2.5 data ############################################################# 
@@ -357,7 +358,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    s.met.data <- s.met.data %>%
      mutate(Month_Year = format(as.Date(month.x), "%b-%y"))
    #remove duplicate month column
-   s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.y", "date.on.trap", "date.off.trap"))
+   #s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.x", "date.on.trap", "date.off.trap"))
    #rename column to Exact.Site to match PM2.5 and insect diversity dataset
    s.met.data <- rename(s.met.data, Exact.Site = site.name)
    #move Month_Year column to be right after Exact.Site column
@@ -457,338 +458,338 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    #wind_speed_mean
    hist(stats_df$wind_speed_ms_mean) # rather normally distributed
 
-###########################################################################################################################
-################################## Insect diversity and PM2.5 data visualization ############################################
-   
-######## 7. Plot shannon div with pm2.5 across dates for each site
-   
-# 7a. compute scaling factor for PM2.5 so that it is correctly positioned (vertically wise) on right y-axis.
-   max_shannon <- max(site_month_dataUSE$Shannon.Diversity, na.rm = TRUE)
-   max_pm25    <- max(site_month_dataUSE$GWRPM25.ugm.3,      na.rm = TRUE)
-   
-   scale_factor <- max_shannon / max_pm25
-   
-# 7b.   create facetted dual-axis plot
-   p_shann <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
-     # Shannon diversity — solid line
-     geom_line(
-       aes(y = Shannon.Diversity, group = Exact.Site),
-       size = 1
-     ) +
-     geom_point(
-       aes(y = Shannon.Diversity, group = Exact.Site),
-       size = 2
-     ) +
-     # PM2.5 — dashed line, same color as site
-     geom_line(
-       aes(y = GWRPM25.ugm.3 * scale_factor, group = Exact.Site),
-       linetype = "dashed",
-       size = 0.9
-     ) +
-     geom_point(
-       aes(y = GWRPM25.ugm.3 * scale_factor, group = Exact.Site),
-       shape = 1,   # hollow points so they look different
-       size = 2
-     ) +
-     scale_y_continuous(
-       name = "Shannon diversity",
-       sec.axis = sec_axis(
-         ~ . / scale_factor,
-         name = "PM2.5 (µg/m³)"
-       )
-     ) +
-     facet_wrap(~ Exact.Site, ncol = 1) +  # or ncol = 2 if you prefer a grid
-     labs(
-       x = "Date",
-       color = "Site",
-       title = "Shannon diversity vs. PM2.5"
-     ) +
-     theme_classic() +
-     theme(
-       axis.text.x = element_text(angle = 45, hjust = 1),
-       legend.position = "bottom"
-     )
-
-# 7c. scatterplot 
-    ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Shannon.Diversity, color = Exact.Site)) +
-      geom_point(
-        aes(group = Exact.Site)
-      ) +
-     #
-     # geom_line(
-     #   aes(group = Exact.Site),
-     #   size = 2
-     # ) +
-      theme_classic()
-   
-
-# 7d. scatterplot for dip, lep, coleo
-      ## Diptera: 
-          site_month_order_df %>%
-            mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
-            ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
-            geom_point() +
-            scale_color_manual(values = c("Diptera" = "blue4", "Other" = "lightgrey")) +
-            theme_classic() +
-            labs(color = "")
-      ## Lepidoptera: 
-          site_month_order_df %>%
-            mutate(highlight = ifelse(Order == "Lepidoptera", "Lepidoptera", "Other")) %>%
-            ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
-            geom_point() +
-            scale_color_manual(values = c("Lepidoptera" = "purple3", "Other" = "lightgrey")) +
-            theme_classic() +
-            labs(color = "")
-      ## Coleoptera:
-          site_month_order_df %>%
-            mutate(highlight = ifelse(Order == "Coleoptera", "Coleoptera", "Other")) %>%
-            ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
-            geom_point() +
-            scale_color_manual(values = c("Coleoptera" = "red", "Other" = "lightgrey")) +
-            theme_classic() +
-            labs(color = "")
-      ## Hymenoptera    
-          site_month_order_df %>%
-            mutate(highlight = ifelse(Order == "Hymenoptera", "Hymenoptera", "Other")) %>%
-            ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
-            geom_point() +
-            scale_color_manual(values = c("Hymenoptera" = "turquoise3", "Other" = "lightgrey")) +
-            theme_classic() +
-            labs(color = "")
-
-# 7e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
-          
-  # Define your 4 focal orders + their colors
-  focal_colors <- c(
-    "Diptera"       = "blue4",
-    "Lepidoptera"   = "purple3",
-    "Coleoptera"    = "red",
-    "Hymenoptera"   = "turquoise3",
-    "Other"         = "lightgrey"
-  )
-  #fig
-  site_month_order_df %>%
-    mutate(Order_group = ifelse(Order %in% names(focal_colors)[1:4], Order, "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = Order_group)) +
-    geom_point() +
-    scale_color_manual(values = focal_colors) +
-    theme_classic() +
-    labs(color = "Order")
-
-
-######## 8. Plot Species_Richness with pm2.5 across dates for each site   
-
-# 8a. Computing scaling factor for PM2.5       
-   max_Sp_Richness <- max(site_month_dataUSE$Species_Richness, na.rm = TRUE)
-   #use max pm2.5 from step 7b.
-   
-   scale_factor.b <- max_Sp_Richness / max_pm25
-   
-# 8b. create facetted dual axis plot- sp. richness and pm2.5 values over time. 
-  p_rich <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
-     # Shannon diversity — solid line
-     geom_line(
-       aes(y = Species_Richness, group = Exact.Site),
-       size = 1
-     ) +
-     geom_point(
-       aes(y = Species_Richness, group = Exact.Site),
-       size = 2
-     ) +
-     # PM2.5 — dashed line, same color as site
-     geom_line(
-       aes(y = GWRPM25.ugm.3 * scale_factor.b, group = Exact.Site),
-       linetype = "dashed",
-       size = 0.9
-     ) +
-     geom_point(
-       aes(y = GWRPM25.ugm.3 * scale_factor.b, group = Exact.Site),
-       shape = 1,   # hollow points so they look different
-       size = 2
-     ) +
-     scale_y_continuous(
-       name = "Species Richness",
-       sec.axis = sec_axis(
-         ~ . / scale_factor.b,
-         name = "PM2.5 (µg/m³)"
-       )
-     ) +
-     facet_wrap(~ Exact.Site, ncol = 1) +  # or ncol = 2 if you prefer a grid
-     labs(
-       x = "Date",
-       color = "Site",
-       title = "Species richness vs. PM2.5"
-     ) +
-     theme_classic() +
-     theme(
-       axis.text.x = element_text(angle = 45, hjust = 1),
-       legend.position = "bottom"
-     )
-
-# 8c. scatterplot 
-  ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Species_Richness, color = Exact.Site)) +
-    geom_point(
-      aes(group = Exact.Site)
-    ) +
-    #geom_line(
-    # aes(group = Exact.Site),
-    #  size = 2
-    #) +
-  theme_classic()
-  
-# 8d. scatterplot for dip, lep, coleo
-  ## Diptera: 
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Diptera" = "blue4", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-  ## Lepidoptera: 
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Lepidoptera", "Lepidoptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Lepidoptera" = "purple3", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-  ## Coleoptera:
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Coleoptera", "Coleoptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Coleoptera" = "red", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-  ## Hymenoptera    
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Hymenoptera", "Hymenoptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Hymenoptera" = "turquoise3", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-
-# 8e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
-
-  site_month_order_df %>%
-    mutate(Order_group = ifelse(Order %in% names(focal_colors)[1:4], Order, "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = Order_group)) +
-    geom_point() +
-    scale_color_manual(values = focal_colors) +
-    theme_classic() +
-    labs(color = "Order") 
-  
-########## 9. Plot Abundance with pm2.5 across dates for each site   
-
-# 9a. Computing scaling factor for PM2.5       
-   max_Abundance <- max(site_month_dataUSE$Abundance, na.rm = TRUE)
-   #use max pm2.5 from step 7b.
-   
-   scale_factor.c <- max_Abundance / max_pm25
-   
-# 9b. create faceted dual axis plot- abundance and pm2.5 values over time. 
-  p_abund <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
-     # Shannon diversity — solid line
-     geom_line(
-       aes(y = Abundance, group = Exact.Site),
-       size = 1
-     ) +
-     geom_point(
-       aes(y = Abundance, group = Exact.Site),
-       size = 2
-     ) +
-     # PM2.5 — dashed line, same color as site
-     geom_line(
-       aes(y = GWRPM25.ugm.3 * scale_factor.c, group = Exact.Site),
-       linetype = "dashed",
-       size = 0.9
-     ) +
-     geom_point(
-       aes(y = GWRPM25.ugm.3 * scale_factor.c, group = Exact.Site),
-       shape = 1,   # hollow points so they look different
-       size = 2
-     ) +
-     scale_y_continuous(
-       name = "Abundance",
-       sec.axis = sec_axis(
-         ~ . / scale_factor.c,
-         name = "PM2.5 (µg/m³)"
-       )
-     ) +
-     facet_wrap(~ Exact.Site, ncol = 1) +  # or ncol = 2 if you prefer a grid
-     labs(
-       x = "Date",
-       color = "Site",
-       title = "Abundance vs. PM2.5"
-     ) +
-     theme_classic() +
-     theme(
-       axis.text.x = element_text(angle = 45, hjust = 1),
-       legend.position = "bottom"
-     )
-   
-# 9c. Scatterplot
-  ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Abundance, color = Exact.Site)) +
-    geom_point(
-      aes(group = Exact.Site)
-    ) +
-    #geom_line(
-    #  aes(group = Exact.Site),
-    #  size = 2
-    #) +
-  theme_classic()
-   
-# 9d. scatterplot for dip, lep, coleo
-  ## Diptera: 
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Diptera" = "blue4", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-  ## Lepidoptera: 
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Lepidoptera", "Lepidoptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Lepidoptera" = "purple3", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-  ## Coleoptera:
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Coleoptera", "Coleoptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Coleoptera" = "red", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-  ## Hymenoptera    
-  site_month_order_df %>%
-    mutate(highlight = ifelse(Order == "Hymenoptera", "Hymenoptera", "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
-    geom_point() +
-    scale_color_manual(values = c("Hymenoptera" = "turquoise3", "Other" = "lightgrey")) +
-    theme_classic() +
-    labs(color = "")
-
-  
-# 9e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
-  
-  site_month_order_df %>%
-    mutate(Order_group = ifelse(Order %in% names(focal_colors)[1:4], Order, "Other")) %>%
-    ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = Order_group)) +
-    geom_point() +
-    scale_color_manual(values = focal_colors) +
-    theme_classic() +
-    labs(color = "Order")    
-  
-  site_month_order_df %>%
-  ggplot(aes(x = Order, y = Abundance)) +
-    geom_bar(stat = "identity")
-  
-  x <- stats_df %>%
-    filter(Exact.Site == "TDS", precipitation_accumulation_mm > 0)
-  
+# ###########################################################################################################################
+# ################################## Insect diversity and PM2.5 data visualization ############################################
+#    
+# ######## 7. Plot shannon div with pm2.5 across dates for each site
+#    
+# # 7a. compute scaling factor for PM2.5 so that it is correctly positioned (vertically wise) on right y-axis.
+#    max_shannon <- max(site_month_dataUSE$Shannon.Diversity, na.rm = TRUE)
+#    max_pm25    <- max(site_month_dataUSE$GWRPM25.ugm.3,      na.rm = TRUE)
+#    
+#    scale_factor <- max_shannon / max_pm25
+#    
+# # 7b.   create facetted dual-axis plot
+#    p_shann <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
+#      # Shannon diversity — solid line
+#      geom_line(
+#        aes(y = Shannon.Diversity, group = Exact.Site),
+#        size = 1
+#      ) +
+#      geom_point(
+#        aes(y = Shannon.Diversity, group = Exact.Site),
+#        size = 2
+#      ) +
+#      # PM2.5 — dashed line, same color as site
+#      geom_line(
+#        aes(y = GWRPM25.ugm.3 * scale_factor, group = Exact.Site),
+#        linetype = "dashed",
+#        size = 0.9
+#      ) +
+#      geom_point(
+#        aes(y = GWRPM25.ugm.3 * scale_factor, group = Exact.Site),
+#        shape = 1,   # hollow points so they look different
+#        size = 2
+#      ) +
+#      scale_y_continuous(
+#        name = "Shannon diversity",
+#        sec.axis = sec_axis(
+#          ~ . / scale_factor,
+#          name = "PM2.5 (µg/m³)"
+#        )
+#      ) +
+#      facet_wrap(~ Exact.Site, ncol = 1) +  # or ncol = 2 if you prefer a grid
+#      labs(
+#        x = "Date",
+#        color = "Site",
+#        title = "Shannon diversity vs. PM2.5"
+#      ) +
+#      theme_classic() +
+#      theme(
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        legend.position = "bottom"
+#      )
+# 
+# # 7c. scatterplot 
+#     ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Shannon.Diversity, color = Exact.Site)) +
+#       geom_point(
+#         aes(group = Exact.Site)
+#       ) +
+#      #
+#      # geom_line(
+#      #   aes(group = Exact.Site),
+#      #   size = 2
+#      # ) +
+#       theme_classic()
+#    
+# 
+# # 7d. scatterplot for dip, lep, coleo
+#       ## Diptera: 
+#           site_month_order_df %>%
+#             mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
+#             ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
+#             geom_point() +
+#             scale_color_manual(values = c("Diptera" = "blue4", "Other" = "lightgrey")) +
+#             theme_classic() +
+#             labs(color = "")
+#       ## Lepidoptera: 
+#           site_month_order_df %>%
+#             mutate(highlight = ifelse(Order == "Lepidoptera", "Lepidoptera", "Other")) %>%
+#             ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
+#             geom_point() +
+#             scale_color_manual(values = c("Lepidoptera" = "purple3", "Other" = "lightgrey")) +
+#             theme_classic() +
+#             labs(color = "")
+#       ## Coleoptera:
+#           site_month_order_df %>%
+#             mutate(highlight = ifelse(Order == "Coleoptera", "Coleoptera", "Other")) %>%
+#             ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
+#             geom_point() +
+#             scale_color_manual(values = c("Coleoptera" = "red", "Other" = "lightgrey")) +
+#             theme_classic() +
+#             labs(color = "")
+#       ## Hymenoptera    
+#           site_month_order_df %>%
+#             mutate(highlight = ifelse(Order == "Hymenoptera", "Hymenoptera", "Other")) %>%
+#             ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = highlight)) +
+#             geom_point() +
+#             scale_color_manual(values = c("Hymenoptera" = "turquoise3", "Other" = "lightgrey")) +
+#             theme_classic() +
+#             labs(color = "")
+# 
+# # 7e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
+#           
+#   # Define your 4 focal orders + their colors
+#   focal_colors <- c(
+#     "Diptera"       = "blue4",
+#     "Lepidoptera"   = "purple3",
+#     "Coleoptera"    = "red",
+#     "Hymenoptera"   = "turquoise3",
+#     "Other"         = "lightgrey"
+#   )
+#   #fig
+#   site_month_order_df %>%
+#     mutate(Order_group = ifelse(Order %in% names(focal_colors)[1:4], Order, "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Shannon_Diversity, color = Order_group)) +
+#     geom_point() +
+#     scale_color_manual(values = focal_colors) +
+#     theme_classic() +
+#     labs(color = "Order")
+# 
+# 
+# ######## 8. Plot Species_Richness with pm2.5 across dates for each site   
+# 
+# # 8a. Computing scaling factor for PM2.5       
+#    max_Sp_Richness <- max(site_month_dataUSE$Species_Richness, na.rm = TRUE)
+#    #use max pm2.5 from step 7b.
+#    
+#    scale_factor.b <- max_Sp_Richness / max_pm25
+#    
+# # 8b. create facetted dual axis plot- sp. richness and pm2.5 values over time. 
+#   p_rich <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
+#      # Shannon diversity — solid line
+#      geom_line(
+#        aes(y = Species_Richness, group = Exact.Site),
+#        size = 1
+#      ) +
+#      geom_point(
+#        aes(y = Species_Richness, group = Exact.Site),
+#        size = 2
+#      ) +
+#      # PM2.5 — dashed line, same color as site
+#      geom_line(
+#        aes(y = GWRPM25.ugm.3 * scale_factor.b, group = Exact.Site),
+#        linetype = "dashed",
+#        size = 0.9
+#      ) +
+#      geom_point(
+#        aes(y = GWRPM25.ugm.3 * scale_factor.b, group = Exact.Site),
+#        shape = 1,   # hollow points so they look different
+#        size = 2
+#      ) +
+#      scale_y_continuous(
+#        name = "Species Richness",
+#        sec.axis = sec_axis(
+#          ~ . / scale_factor.b,
+#          name = "PM2.5 (µg/m³)"
+#        )
+#      ) +
+#      facet_wrap(~ Exact.Site, ncol = 1) +  # or ncol = 2 if you prefer a grid
+#      labs(
+#        x = "Date",
+#        color = "Site",
+#        title = "Species richness vs. PM2.5"
+#      ) +
+#      theme_classic() +
+#      theme(
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        legend.position = "bottom"
+#      )
+# 
+# # 8c. scatterplot 
+#   ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Species_Richness, color = Exact.Site)) +
+#     geom_point(
+#       aes(group = Exact.Site)
+#     ) +
+#     #geom_line(
+#     # aes(group = Exact.Site),
+#     #  size = 2
+#     #) +
+#   theme_classic()
+#   
+# # 8d. scatterplot for dip, lep, coleo
+#   ## Diptera: 
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Diptera" = "blue4", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+#   ## Lepidoptera: 
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Lepidoptera", "Lepidoptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Lepidoptera" = "purple3", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+#   ## Coleoptera:
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Coleoptera", "Coleoptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Coleoptera" = "red", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+#   ## Hymenoptera    
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Hymenoptera", "Hymenoptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Hymenoptera" = "turquoise3", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+# 
+# # 8e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
+# 
+#   site_month_order_df %>%
+#     mutate(Order_group = ifelse(Order %in% names(focal_colors)[1:4], Order, "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = Order_group)) +
+#     geom_point() +
+#     scale_color_manual(values = focal_colors) +
+#     theme_classic() +
+#     labs(color = "Order") 
+#   
+# ########## 9. Plot Abundance with pm2.5 across dates for each site   
+# 
+# # 9a. Computing scaling factor for PM2.5       
+#    max_Abundance <- max(site_month_dataUSE$Abundance, na.rm = TRUE)
+#    #use max pm2.5 from step 7b.
+#    
+#    scale_factor.c <- max_Abundance / max_pm25
+#    
+# # 9b. create faceted dual axis plot- abundance and pm2.5 values over time. 
+#   p_abund <- ggplot(site_month_dataUSE, aes(x = Month_Year, color = Exact.Site)) +
+#      # Shannon diversity — solid line
+#      geom_line(
+#        aes(y = Abundance, group = Exact.Site),
+#        size = 1
+#      ) +
+#      geom_point(
+#        aes(y = Abundance, group = Exact.Site),
+#        size = 2
+#      ) +
+#      # PM2.5 — dashed line, same color as site
+#      geom_line(
+#        aes(y = GWRPM25.ugm.3 * scale_factor.c, group = Exact.Site),
+#        linetype = "dashed",
+#        size = 0.9
+#      ) +
+#      geom_point(
+#        aes(y = GWRPM25.ugm.3 * scale_factor.c, group = Exact.Site),
+#        shape = 1,   # hollow points so they look different
+#        size = 2
+#      ) +
+#      scale_y_continuous(
+#        name = "Abundance",
+#        sec.axis = sec_axis(
+#          ~ . / scale_factor.c,
+#          name = "PM2.5 (µg/m³)"
+#        )
+#      ) +
+#      facet_wrap(~ Exact.Site, ncol = 1) +  # or ncol = 2 if you prefer a grid
+#      labs(
+#        x = "Date",
+#        color = "Site",
+#        title = "Abundance vs. PM2.5"
+#      ) +
+#      theme_classic() +
+#      theme(
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        legend.position = "bottom"
+#      )
+#    
+# # 9c. Scatterplot
+#   ggplot(site_month_dataUSE, aes(x = GWRPM25.ugm.3, y = Abundance, color = Exact.Site)) +
+#     geom_point(
+#       aes(group = Exact.Site)
+#     ) +
+#     #geom_line(
+#     #  aes(group = Exact.Site),
+#     #  size = 2
+#     #) +
+#   theme_classic()
+#    
+# # 9d. scatterplot for dip, lep, coleo
+#   ## Diptera: 
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Diptera", "Diptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Diptera" = "blue4", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+#   ## Lepidoptera: 
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Lepidoptera", "Lepidoptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Lepidoptera" = "purple3", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+#   ## Coleoptera:
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Coleoptera", "Coleoptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Coleoptera" = "red", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+#   ## Hymenoptera    
+#   site_month_order_df %>%
+#     mutate(highlight = ifelse(Order == "Hymenoptera", "Hymenoptera", "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Species_Richness, color = highlight)) +
+#     geom_point() +
+#     scale_color_manual(values = c("Hymenoptera" = "turquoise3", "Other" = "lightgrey")) +
+#     theme_classic() +
+#     labs(color = "")
+# 
+#   
+# # 9e. all four orders, dip, lep, coleo, hym on same fig - scatterplot, pm2.5 vs shannon div.
+#   
+#   site_month_order_df %>%
+#     mutate(Order_group = ifelse(Order %in% names(focal_colors)[1:4], Order, "Other")) %>%
+#     ggplot(aes(x = GWRPM25.ugm.3, y = Abundance, color = Order_group)) +
+#     geom_point() +
+#     scale_color_manual(values = focal_colors) +
+#     theme_classic() +
+#     labs(color = "Order")    
+#   
+#   site_month_order_df %>%
+#   ggplot(aes(x = Order, y = Abundance)) +
+#     geom_bar(stat = "identity")
+#   
+#   x <- stats_df %>%
+#     filter(Exact.Site == "TDS", precipitation_accumulation_mm > 0)
+#   
