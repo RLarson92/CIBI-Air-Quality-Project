@@ -407,8 +407,6 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    corrplot(Scor, tl.cex = 0.6, method = 'number') ## think need to choose between 'n_smoke' (number of smoke days in sampling period) and 'per_smoke' which is ... ? 
 
 #3. CORR combining smoke and meteorological datasets
-  
-# 3a.  
    S.M.cor <- cor(s.met.data[, c(4, 10, 11, 15, 18)], method = "pearson")
    corrplot(S.M.cor, tl.cex = 0.6, method = 'number')
    ## as of now, I want to keep 'n_smoke', 'precipitation_accumulation_mm', 'max_relative_humidity_mean', 'max_air_temperature_mean_K', 'wind_speed_ms_mean'. None of these are overly correlated, and I think they ahve most important biological significance. 
