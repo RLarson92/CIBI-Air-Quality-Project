@@ -358,7 +358,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
    s.met.data <- s.met.data %>%
      mutate(Month_Year = format(as.Date(month.x), "%b-%y"))
    #remove duplicate month column
-   #s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.x", "date.on.trap", "date.off.trap"))
+   s.met.data <- select(s.met.data, -c("month.y", "month.x", "n_days.x", "date.on.trap", "date.off.trap"))
    #rename column to Exact.Site to match PM2.5 and insect diversity dataset
    s.met.data <- rename(s.met.data, Exact.Site = site.name)
    #move Month_Year column to be right after Exact.Site column
