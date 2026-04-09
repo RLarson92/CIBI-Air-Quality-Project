@@ -368,7 +368,7 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 
 # a. rename values in Exact.Site column in clean_pm2.5 dataframe. make them short hand so that they match values in s.met.data dataframe
    #clean_pm2.5 <- clean_pm2.5 %>%
-     mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
+     #mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
    
 # b. join s.met.data and clean_pm2.5 dataset
    abiotic.data <- clean_pm2.5 %>%
