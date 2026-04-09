@@ -23,7 +23,7 @@ library(corrplot) # correlation matrix visualizations
 
 ####### 1. Load BOLD data 
 
-all_sdnhm <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/sdnhm_COIdata.csv") 
+all_sdnhm <- read.csv("https://raw.githubusercontent.com/ehornalowell/CIBI-Air-Quality-Project/main/data/DNA_data/sdnhm_COIdata.csv") 
 #csv is from another r script. file was too large to upload to Github repo. so I filtered out for all SDNHM data using collectors. 
 #That is what this csv file is.
 
