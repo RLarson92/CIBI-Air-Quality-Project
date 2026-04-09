@@ -423,8 +423,8 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
 #1.  combining clean.abiotic.data and site_month_dataUSE dataframes - this will be used in stats
 
 # 1a. rename Exact.Site in Site_month_dataUSE df to match abbreviations in clean.abiotic.data df. 
-   #abund.bin.order_df <- abund.bin.order_df %>%
-     #mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
+   abund.bin.order_df <- abund.bin.order_df %>%
+     mutate(Exact.Site = recode(Exact.Site, "Anza Borrego UC Reserve" = "ABUCR", "Picacho State Park" = "PSP", "Wheatley Ranch" = "WR", "Tierra Del Sol SDAA" = "TDS", "Lopez Ridge Vernal Pools" = "LRVP"))
 
 # 1b. Merge two dataframes 
    stats_df <- abund.bin.order_df %>%
