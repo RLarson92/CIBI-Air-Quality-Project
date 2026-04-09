@@ -242,47 +242,47 @@ sdnhm_noNABINs <- sdnhm_obs_mal %>%
     ##################################
     ##### USE THIS to build DF for RL to run models for statistical analyses ######################
     ######################################
-    
-# # 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
-#    spr <- clean_sdnhm_noNABIN %>%
-#      group_by(Exact.Site, Month_Year) %>%
-#      summarize(Species_Richness = n_distinct(BIN),
-#                .groups = "drop")
-#    
-#    # joining column back to original dataframe clean_sdnhm_noNABIN
-#    clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
-#    left_join(spr, by = c("Exact.Site", "Month_Year"))
-# 
-# # 4b (ii). Calculating Species Richness for every unique month_year * exact.site combination for each Order
-#    spr_orders <- clean_sdnhm_noNABIN %>%
-#      group_by(Exact.Site, Month_Year, Order) %>%
-#      summarize(Species_Richness = n_distinct(BIN),
-#                .groups = "drop") 
-#    
-#    
-# # 4c (i). Calculating Shannon Diversity Index using vegan() pacakage
-#    sdiv <- clean_sdnhm_noNABIN %>%
-#      #count individuals per bin per site per month
-#      group_by(Exact.Site, Month_Year, BIN) %>%
-#      summarise(BIN_Abundance = n(), 
-#                .groups = "drop") %>%
-#      #now calculate shannon per site * month 
-#      group_by(Exact.Site, Month_Year) %>%
-#      summarise(Shannon.Diversity = diversity(BIN_Abundance, index = "shannon"),
-#                .groups = "drop")
-# 
-#   # add shannon diversity index to clean_sdnhm_noNABIN dataframe 
-#    clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
-#      left_join(sdiv, by = c("Exact.Site", "Month_Year"))
-# 
-# # 4c (ii). Calculating Shannon.Diversity Index for month_year * exact.site combination for each Order
-#    sdiv_orders <- clean_sdnhm_noNABIN %>%
-#      group_by(Exact.Site, Month_Year, Order, BIN) %>%
-#      summarise(BIN_abundance = n(),
-#                .groups = "drop") %>%
-#      group_by(Exact.Site, Month_Year, Order) %>%
-#      summarise(Shannon_Diversity = diversity(BIN_abundance, index = "shannon"),
-#                .groups = "drop")
+
+# 4b (i). Calculating Species Richness for every unique month_year * exact.site combination (aka for every month at every site)
+   spr <- clean_sdnhm_noNABIN %>%
+     group_by(Exact.Site, Month_Year) %>%
+     summarize(Species_Richness = n_distinct(BIN),
+               .groups = "drop")
+
+   # joining column back to original dataframe clean_sdnhm_noNABIN
+   clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
+   left_join(spr, by = c("Exact.Site", "Month_Year"))
+
+# 4b (ii). Calculating Species Richness for every unique month_year * exact.site combination for each Order
+   spr_orders <- clean_sdnhm_noNABIN %>%
+     group_by(Exact.Site, Month_Year, Order) %>%
+     summarize(Species_Richness = n_distinct(BIN),
+               .groups = "drop")
+
+
+# 4c (i). Calculating Shannon Diversity Index using vegan() pacakage
+   sdiv <- clean_sdnhm_noNABIN %>%
+     #count individuals per bin per site per month
+     group_by(Exact.Site, Month_Year, BIN) %>%
+     summarise(BIN_Abundance = n(),
+               .groups = "drop") %>%
+     #now calculate shannon per site * month
+     group_by(Exact.Site, Month_Year) %>%
+     summarise(Shannon.Diversity = diversity(BIN_Abundance, index = "shannon"),
+               .groups = "drop")
+
+  # add shannon diversity index to clean_sdnhm_noNABIN dataframe
+   clean_sdnhm_noNABIN <- clean_sdnhm_noNABIN %>%
+     left_join(sdiv, by = c("Exact.Site", "Month_Year"))
+
+# 4c (ii). Calculating Shannon.Diversity Index for month_year * exact.site combination for each Order
+   sdiv_orders <- clean_sdnhm_noNABIN %>%
+     group_by(Exact.Site, Month_Year, Order, BIN) %>%
+     summarise(BIN_abundance = n(),
+               .groups = "drop") %>%
+     group_by(Exact.Site, Month_Year, Order) %>%
+     summarise(Shannon_Diversity = diversity(BIN_abundance, index = "shannon"),
+               .groups = "drop")
 
 ######################################################################################################################
 ##################################### Load in PM2.5 data ############################################################# 
