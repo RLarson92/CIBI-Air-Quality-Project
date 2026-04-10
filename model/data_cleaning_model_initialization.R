@@ -1,7 +1,7 @@
 library(dplyr)
 library(tidyr)
 
-stats_df <- read.csv("~/GitHub/CIBI-Air-Quality-Project/data/stats_df.csv")
+stats_df <- read.csv("./data/stats_df.csv")
 stats_df$Month <- lubridate::parse_date_time(stats_df$Month_Year, "b-y")
 
 # stats_df %>%
@@ -13,6 +13,7 @@ sampling_days <- read.csv("./data/sampling_days.csv")
 sampling_days$Month <- lubridate::parse_date_time(sampling_days$Month_Year, "b-y")
 
 tmp <- full_join(stats_df, sampling_days, by = c("Exact.Site" = "Site", "Month" = "Month"))
+tmp <- tmp[-c(17335),]
 tmp %>%
   select(-c(Month_Year.x, Month_Year.y)) -> tmp1
 tmp1 <- as.data.frame(tmp1)
@@ -72,6 +73,17 @@ J[is.na(J)] <- 0
 
 orders <- unique(tmp1[,c('Order','BIN')])
 
+# covariate processing
+wind <- array(data = NA, dim = c(max(tmp1$Exact.Site),
+                                 max(tmp1$Month)))
+for(i in 1:nrow(tmp1)){
+  wind[
+    tmp1$Exact.Site[i],
+    tmp1$Month[i]
+  ] <- tmp1$wind_speed_ms_mean[i]
+}
+wind[is.na(wind)]<-0
+
 #### Run Model ####
 data_list <- list(
   nSite = max(tmp1$Exact.Site),
@@ -79,7 +91,9 @@ data_list <- list(
   nOrder = max(tmp1$Order),
   nMonth = max(tmp1$Month),
   order = orders$Order,
-  y = y
+  y = y,
+  J = J,
+  wind = wind
 )
 
 inits <- function(chain){
@@ -91,17 +105,23 @@ inits <- function(chain){
       mu.tau.beta1 = rgamma(1,1,1),
       mu.mu.alpha0 = rnorm(1),
       mu.tau.alpha0 = rgamma(1,1,1),
+      mu.mu.alpha2 = rnorm(1),
+      mu.tau.alpha2 = rgamma(1,1,1),
       mu.beta0 = rnorm(data_list$nOrder),
       mu.beta1 = rnorm(data_list$nOrder),
       mu.alpha0 = rnorm(data_list$nOrder),
+      mu.alpha2 = rnorm(data_list$nOrder),
       tau.beta0 = rgamma(1,1,1),
       tau.beta1 = rgamma(1,1,1),
       tau.alpha0 = rgamma(1,1,1),
+      tau.alpha2 = rgamma(1,1,1),
       beta0 = rnorm(data_list$nTaxa),
       beta1 = matrix(1,
                      nrow = data_list$nTaxa,
                      ncol = data_list$nSite),
       alpha0 = rnorm(data_list$nTaxa),
+      alpha1 = rnorm(1),
+      alpha2 = rnorm(data_list$nTaxa),
       N = array(2000, dim = c(data_list$nTaxa,
                               data_list$nSite,
                               data_list$nMonth)),
@@ -137,18 +157,19 @@ runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1","mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-              "beta0","beta1",
-              "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0","alpha0",
+              "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0","alpha1","mu.mu.alpha2","mu.tau.alpha2","mu.alpha2","tau.alpha2",
               "Nsite"),
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 5000,
+  burnin = 10000,
   sample = 2000,
-  adapt = 100,
+  adapt = 2000,
   modules = "glm",
   thin = 2,
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
-summary(my_mod)
+runjags::add.summary(my_mod)
+plot(my_mod, plot.type = "trace", vars = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1","mu.beta0","mu.beta1","tau.beta0","tau.beta1",
+                                           "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0"))
