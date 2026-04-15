@@ -1,55 +1,66 @@
 library(dplyr)
 library(tidyr)
 
+#### Data Loading & Clean-up ####
+# let's load in the species bin counts by site x month
 stats_df <- read.csv("./data/stats_df.csv")
-stats_df$Month <- lubridate::parse_date_time(stats_df$Month_Year, "b-y")
 
-# stats_df %>%
-#   group_by(Exact.Site, Month, Order) %>%
-#   summarise(Y = sum(Abundnace)) -> tmp
-# tmp <- as.data.frame(tmp)
+# and remove Hemipterans; we're not interested in this order for this analysis
+stats_df %>%
+  filter(Order != "Hemiptera") -> rawData
+rawData %>%
+  expand(Exact.Site, Month_Year, BIN) -> fullData
+# now let's use lubridate to turn the month/year timestamp into actual time data
+fullData$Month <- lubridate::parse_date_time(fullData$Month_Year, "b-y")
+# this adds a column to the right end of the dataframe with a date for each
+# sample. the date defaults to the 1st of the month, but that doesn't matter for
+# our analysis
 
+# now let's read in our sampling effort data frame
 sampling_days <- read.csv("./data/sampling_days.csv")
-sampling_days$Month <- lubridate::parse_date_time(sampling_days$Month_Year, "b-y")
-
-tmp <- full_join(stats_df, sampling_days, by = c("Exact.Site" = "Site", "Month" = "Month"))
-tmp <- tmp[-c(17335),]
+# and get the correct time data
+sampling_days$Month <- lubridate::parse_date_time(sampling_days$Month_Year, 
+                                                  "y-b")
+# Now let's joing the sample days info with the expanded dataset
+tmp <- left_join(fullData, sampling_days, by=c("Exact.Site" = "Site",
+                                               "Month" = "Month"))
+# and remove the "Month_Year" columns that are no longer useful
 tmp %>%
-  select(-c(Month_Year.x, Month_Year.y)) -> tmp1
-tmp1 <- as.data.frame(tmp1)
+  select(-c(Month_Year.x, Month_Year.y)) -> tmp
+# now we'll add the abundance data to the correct places
+rawData$Month <- lubridate::parse_date_time(rawData$Month_Year, "b-y")
+tmp2 <- right_join(rawData, tmp, by=c("Exact.Site" = "Exact.Site",
+                                      "Month" = "Month",
+                                      "BIN" = "BIN"))
+tmp2 %>%
+  select(Exact.Site, Month, BIN, Abundnace, Days_on_Trap) -> tmp2
+tmp2 %>%
+  mutate(
+    Abundnace = replace_when(Abundnace, is.na(Abundnace) & Days_on_Trap > 0 ~ 0)
+  ) -> tmp1
+tmp1$Days_on_Trap[is.na(tmp1$Days_on_Trap)] <- 0
 
-# tmp1 %>%
-#   expand(Exact.Site, Month, BIN) -> tmp2
-# data <- right_join(tmp1, tmp2)
-# data$Days_on_Trap[is.na(data$Days_on_Trap)] <- 0
-# 
-# order <- cbind(stats_df$Order, stats_df$BIN)
-# colnames(order) <- c("Order", "BIN")
-# order <- as.data.frame(order)
-# data <- left_join(data, order, by = "BIN")
-
+# let's put the data into the correct order. first sort by species bin, then by
+# month/year, then by site
 tmp1 <- tmp1[order(
   tmp1[,"BIN"],
   tmp1[,"Month"],
   tmp1[,"Exact.Site"]),]
 
-# Generate keys
+# and before we go further let's make some reference keys to help us remember
+# which number corresponds to which site / month / Order
 site.key <- data.frame(Site = sort(unique(tmp1$Exact.Site)))
 site.key$Site_ID <- as.numeric(factor(site.key$Site))
 
 month.key <- data.frame(Month_Year = sort(unique(tmp1$Month)))
 month.key$Month_ID <- as.numeric(factor(month.key$Month_Year))
 
-order.key <- data.frame(Order = sort(unique(tmp1$Order)))
-order.key$Order_ID <- as.numeric(factor(order.key$Order))
-
 # then replace values w/ numbers
 tmp1$Exact.Site <- as.numeric(as.factor(tmp1$Exact.Site))
 tmp1$Month <- as.numeric(as.factor(tmp1$Month))
-tmp1$Order <- as.numeric(as.factor(tmp1$Order))
 tmp1$BIN <- as.numeric(as.factor(tmp1$BIN))
 
-# array creation
+# data array creation
 y <- array(data = NA, dim = c(max(tmp1$BIN),
                               max(tmp1$Exact.Site),
                               max(tmp1$Month)))
@@ -69,11 +80,21 @@ for(i in 1:nrow(tmp1)){
     tmp1$Month[i]
   ] <- tmp1$Days_on_Trap[i]
 }
-J[is.na(J)] <- 0
+# getting order information
+rawData %>%
+  select(Order, BIN) -> orders
+order.key <- data.frame(Order = sort(unique(orders$Order)))
+order.key$Order_ID <- as.numeric(factor(order.key$Order))
+# we also need an index of which species bins belong to which Orders
+orders$Order <- as.numeric(as.factor(orders$Order))
+orders$BIN <- as.numeric(as.factor(orders$BIN))
+orders <- unique(orders[,c('Order','BIN')])
 
-orders <- unique(tmp1[,c('Order','BIN')])
-
-# covariate processing
+#### Covariate Processing ####
+# our analysis includes 2 covariates on capture rates: average wind speed during
+# the sampling period (wind), & number of trap-days (J)
+# these covariates are also indexed by site/time, so it gets a similar array to 
+# the species bin data
 wind <- array(data = NA, dim = c(max(tmp1$Exact.Site),
                                  max(tmp1$Month)))
 for(i in 1:nrow(tmp1)){
@@ -82,82 +103,30 @@ for(i in 1:nrow(tmp1)){
     tmp1$Month[i]
   ] <- tmp1$wind_speed_ms_mean[i]
 }
-wind[is.na(wind)]<-0
+wind[is.na(wind)]<-mean(wind, na.rm = TRUE)
+
+
 
 #### Run Model ####
 data_list <- list(
-  nSite = max(tmp1$Exact.Site),
+  nSite = max(site.key$Site_ID),
   nTaxa = max(tmp1$BIN),
-  nOrder = max(tmp1$Order),
+  nOrder = max(order.key$Order_ID),
   nMonth = max(tmp1$Month),
   order = orders$Order,
-  y = y,
-  J = J,
-  wind = wind
+  y = y
 )
 
-inits <- function(chain){
-  gen_list <- function(chain = chain){
-    list(
-      mu.mu.beta0 = rnorm(1),
-      mu.tau.beta0 = rgamma(1,1,1),
-      mu.mu.beta1 = rnorm(1),
-      mu.tau.beta1 = rgamma(1,1,1),
-      mu.mu.alpha0 = rnorm(1),
-      mu.tau.alpha0 = rgamma(1,1,1),
-      mu.mu.alpha2 = rnorm(1),
-      mu.tau.alpha2 = rgamma(1,1,1),
-      mu.beta0 = rnorm(data_list$nOrder),
-      mu.beta1 = rnorm(data_list$nOrder),
-      mu.alpha0 = rnorm(data_list$nOrder),
-      mu.alpha2 = rnorm(data_list$nOrder),
-      tau.beta0 = rgamma(1,1,1),
-      tau.beta1 = rgamma(1,1,1),
-      tau.alpha0 = rgamma(1,1,1),
-      tau.alpha2 = rgamma(1,1,1),
-      beta0 = rnorm(data_list$nTaxa),
-      beta1 = matrix(1,
-                     nrow = data_list$nTaxa,
-                     ncol = data_list$nSite),
-      alpha0 = rnorm(data_list$nTaxa),
-      alpha1 = rnorm(1),
-      alpha2 = rnorm(data_list$nTaxa),
-      N = array(2000, dim = c(data_list$nTaxa,
-                              data_list$nSite,
-                              data_list$nMonth)),
-      .RNG.name = switch(chain,
-                         "1" = "base::Wichmann-Hill",
-                         "2" = "base::Marsaglia-Multicarry",
-                         "3" = "base::Super-Duper",
-                         "4" = "base::Mersenne-Twister",
-                         "5" = "base::Wichmann-Hill",
-                         "6" = "base::Marsaglia-Multicarry",
-                         "7" = "base::Super-Duper",
-                         "8" = "base::Mersenne-Twister"),
-      .RNG.seed = sample(1:1e+06, 1)
-    )
-  }
-  return(
-    switch(
-      chain,
-      "1" = gen_list(chain),
-      "2" = gen_list(chain),
-      "3" = gen_list(chain),
-      "4" = gen_list(chain),
-      "5" = gen_list(chain),
-      "6" = gen_list(chain),
-      "7" = gen_list(chain),
-      "8" = gen_list(chain)
-    )
-  )
-}
+source("./functions/inits.R")
 
 library(runjags)
 runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.1/x64/bin")
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
-  monitor = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1","mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-              "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0","alpha1","mu.mu.alpha2","mu.tau.alpha2","mu.alpha2","tau.alpha2",
+  monitor = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
+              "mu.beta0","mu.beta1","tau.beta0","tau.beta1",
+              "mu.phi","tau.phi",
+              "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0",
               "Nsite"),
   data = data_list,
   n.chains = 3,
@@ -170,6 +139,10 @@ my_mod <- runjags::run.jags(
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
-runjags::add.summary(my_mod)
-plot(my_mod, plot.type = "trace", vars = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1","mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-                                           "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0"))
+varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
+            "mu.beta0","mu.beta1","tau.beta0","tau.beta1",
+            "mu.phi","tau.phi",
+            "mu.mu.alpha0","mu.tau.alpha0",
+            "mu.alpha0","tau.alpha0")
+runjags::add.summary(my_mod, vars = varSum)
+plot(my_mod, plot.type = "trace", vars = varSum)
