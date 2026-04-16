@@ -36,9 +36,9 @@ model{
   ## Species-Specific Priors
   # species-specific coefficients
   for (i in 1:nTaxa) {
-    beta0[i] ~ dnorm(mu.beta0[order[i]], tau.beta0)
     alpha0[i] ~ dnorm(mu.alpha0[order[i]], tau.alpha0)
     for (j in 1:nSite){
+      beta0[i,j] ~ dnorm(mu.beta0[order[i]], tau.beta0)
       beta1[i,j] ~ dnorm(mu.beta1[order[i]], tau.beta1)
       phi[i,j] ~ dnorm(mu.phi, tau.phi)
     }
@@ -50,17 +50,16 @@ model{
   for (i in 1:nTaxa) {
     w[i] ~ dbern(omega)
     for (j in 1:nSite) {
-      N[i,j,1] ~ dpois(pi[i,j,1])
-      log(lambda[i,j,1]) <- beta0[i]
-      pi[i,j,1] <- lambda[i,j,1]*w[i]
+      N[i,j,1] ~ dpois(lambda[i,j,1])
+      log(lambda[i,j,1]) <- beta0[i,j]
   # Observation Process
       y[i,j,1] ~ dbin(p[i,j,1], N[i,j,1])
       logit(p[i,j,1]) <- alpha0[i]
   # Subsequent Sampling months
   # State Process
       for (t in 2:nMonth){
-        N[i,j,t] ~ dpois(lambda[i,j,t]*w[i])
-        log(lambda[i,j,t]) <- beta0[i] + phi[i,j]
+        N[i,j,t] ~ dpois(lambda[i,j,t])
+        log(lambda[i,j,t]) <- beta0[i,j] + phi[i,j]
   # Observation Process
         y[i,j,t] ~ dbin(p[i,j,t], N[i,j,t])
         logit(p[i,j,t]) <- alpha0[i]
