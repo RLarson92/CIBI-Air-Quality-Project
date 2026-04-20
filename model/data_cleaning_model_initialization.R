@@ -90,22 +90,49 @@ orders$Order <- as.numeric(as.factor(orders$Order))
 orders$BIN <- as.numeric(as.factor(orders$BIN))
 orders <- unique(orders[,c('Order','BIN')])
 
+# 20260417 - I might have to use nested indexing to handle model computation
+# has_data <- which(!is.na(y), arr.ind = TRUE)
+# y_long <- y[!is.na(y)]
+
 #### Covariate Processing ####
 # our analysis includes 2 covariates on capture rates: average wind speed during
 # the sampling period (wind), & number of trap-days (J)
 # these covariates are also indexed by site/time, so it gets a similar array to 
 # the species bin data
-wind <- array(data = NA, dim = c(max(tmp1$Exact.Site),
-                                 max(tmp1$Month)))
-for(i in 1:nrow(tmp1)){
+rawData %>%
+  select(Exact.Site, Month, wind_speed_ms_mean, PM2.5) %>%
+  unique() -> covariates
+covariates$Exact.Site <- as.numeric(as.factor(covariates$Exact.Site))
+covariates$Month <- as.numeric(as.factor(covariates$Month))
+
+wind <- array(data = NA, dim = c(max(covariates$Exact.Site),
+                                 max(covariates$Month)))
+for(i in 1:nrow(covariates)){
   wind[
-    tmp1$Exact.Site[i],
-    tmp1$Month[i]
-  ] <- tmp1$wind_speed_ms_mean[i]
+    covariates$Exact.Site[i],
+    covariates$Month[i]
+  ] <- covariates$wind_speed_ms_mean[i]
 }
-wind[is.na(wind)]<-mean(wind, na.rm = TRUE)
-
-
+wind[is.na(wind)] <- mean(wind, na.rm = TRUE)
+# hasData_wind <- which(!is.na(wind), arr.ind = TRUE)
+# ob_cov_long <- matrix(1,
+#                       nrow(hasData_wind),
+#                       ncol = 2)
+# for(i in 1:nrow(hasData_wind)){
+#   ob_cov_long[i,2] <- wind[
+#     hasData_wind[i,1],
+#     hasData_wind[i,2]
+#   ]
+# }
+PM <- array(data = NA, dim = c(max(covariates$Exact.Site),
+                               max(covariates$Month)))
+for(i in 1:nrow(covariates)){
+  PM[
+    covariates$Exact.Site[i],
+    covariates$Month[i]
+  ] <- covariates$PM2.5[i]
+}
+PM[is.na(PM)] <- mean(PM, na.rm = TRUE)
 
 #### Run Model ####
 data_list <- list(
@@ -114,19 +141,22 @@ data_list <- list(
   nOrder = max(order.key$Order_ID),
   nMonth = max(tmp1$Month),
   order = orders$Order,
-  y = y
+  y = y,
+  J = J,
+  wind = wind,
+  PM = PM
 )
 
 source("./functions/inits.R")
 
 library(runjags)
-runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.1/x64/bin")
+# runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.1/x64/bin")
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
               "mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-              "mu.phi","tau.phi",
-              "mu.mu.alpha0","mu.tau.alpha0","mu.alpha0","tau.alpha0",
+              "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha1","mu.tau.alpha1",
+              "mu.alpha0","tau.alpha0","mu.alpha1","tau.alpha1",
               "Nsite"),
   data = data_list,
   n.chains = 3,
@@ -136,13 +166,13 @@ my_mod <- runjags::run.jags(
   adapt = 2000,
   modules = "glm",
   thin = 2,
-  method = "parallel",
-  jags = runjags.getOption("jagspath")
+  method = "parallel"#,
+  #jags = runjags.getOption("jagspath")
 )
+system("say Calculations Complete.")
 varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-            "mu.phi","tau.phi",
-            "mu.mu.alpha0","mu.tau.alpha0",
-            "mu.alpha0","tau.alpha0")
+            "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha1","mu.tau.alpha1",
+            "mu.alpha0","tau.alpha0","mu.alpha1","tau.alpha1")
 runjags::add.summary(my_mod, vars = varSum)
 plot(my_mod, plot.type = "trace", vars = varSum)
