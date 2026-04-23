@@ -104,6 +104,8 @@ rawData %>%
   unique() -> covariates
 covariates$Exact.Site <- as.numeric(as.factor(covariates$Exact.Site))
 covariates$Month <- as.numeric(as.factor(covariates$Month))
+covariates$wind_speed_ms_mean <- scale(covariates$wind_speed_ms_mean)
+covariates$PM2.5 <- scale(covariates$PM2.5)
 
 wind <- array(data = NA, dim = c(max(covariates$Exact.Site),
                                  max(covariates$Month)))
@@ -113,7 +115,7 @@ for(i in 1:nrow(covariates)){
     covariates$Month[i]
   ] <- covariates$wind_speed_ms_mean[i]
 }
-wind[is.na(wind)] <- mean(wind, na.rm = TRUE)
+wind[is.na(wind)] <- 0
 # hasData_wind <- which(!is.na(wind), arr.ind = TRUE)
 # ob_cov_long <- matrix(1,
 #                       nrow(hasData_wind),
@@ -132,7 +134,7 @@ for(i in 1:nrow(covariates)){
     covariates$Month[i]
   ] <- covariates$PM2.5[i]
 }
-PM[is.na(PM)] <- mean(PM, na.rm = TRUE)
+PM[is.na(PM)] <- 0
 
 #### Run Model ####
 data_list <- list(
@@ -150,29 +152,37 @@ data_list <- list(
 source("./functions/inits.R")
 
 library(runjags)
-# runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.1/x64/bin")
+# I guess my JAGS isn't stored where {runjags} expects it to be, so I have to 
+# tell it where to look
+runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
-              "mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-              "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha1","mu.tau.alpha1",
-              "mu.alpha0","tau.alpha0","mu.alpha1","tau.alpha1",
-              "Nsite"),
+              "mu.mu.beta2","mu.tau.beta2",
+              "mu.beta0","mu.beta1","mu.beta2","tau.beta0","tau.beta1","tau.beta2",
+              "beta3","beta4","beta5",
+              "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
+              "mu.alpha0","tau.alpha0","alpha1","mu.alpha2","tau.alpha2",
+              "alpha3","alpha4",
+              "Ntotal", "Nsite"),
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 10000,
-  sample = 2000,
-  adapt = 2000,
+  burnin = 120000,
+  sample = 180000,
+  adapt = 10000,
   modules = "glm",
-  thin = 2,
-  method = "parallel"#,
-  #jags = runjags.getOption("jagspath")
+  thin = 3,
+  method = "parallel",
+  jags = runjags.getOption("jagspath")
 )
-system("say Calculations Complete.")
+# system("say Calculations Complete.") # only works on Mac
 varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
-            "mu.beta0","mu.beta1","tau.beta0","tau.beta1",
-            "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha1","mu.tau.alpha1",
-            "mu.alpha0","tau.alpha0","mu.alpha1","tau.alpha1")
+            "mu.mu.beta2","mu.tau.beta2",
+            "mu.beta0","mu.beta1","mu.beta2","tau.beta0","tau.beta1","tau.beta2",
+            "beta3","beta4","beta5",
+            "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
+            "mu.alpha0","tau.alpha0","alpha1","mu.alpha2","tau.alpha2",
+            "alpha3","alpha4")
 runjags::add.summary(my_mod, vars = varSum)
 plot(my_mod, plot.type = "trace", vars = varSum)
