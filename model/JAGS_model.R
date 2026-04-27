@@ -1,7 +1,7 @@
 model{
   ### PRIORS
   ## Hyperpriors
-  mu.omega ~ dnorm(0,0.1)
+  mu.omega ~ dnorm(0, 0.1)
   tau.omega ~ dgamma(1,1)
   sig.omega <- 1 / sqrt(tau.omega)
   # for abundance
@@ -14,9 +14,9 @@ model{
   mu.mu.beta2 ~ dnorm(0, 0.1)
   mu.tau.beta2 ~ dgamma(1, 1)
   mu.sig.beta2 <- 1 / sqrt(mu.tau.beta2)
-  beta3 <- dnorm(0,0.1)
-  beta4 <- dnorm(0,0.1)
-  beta5 <- dnorm(0,0.1)
+  beta3 ~ dnorm(0, 0.1)
+  beta4 ~ dnorm(0, 0.1)
+  beta5 ~ dnorm(0, 0.1)
 
   # for captures
   mu.mu.alpha0 ~ dnorm(0, 0.1)

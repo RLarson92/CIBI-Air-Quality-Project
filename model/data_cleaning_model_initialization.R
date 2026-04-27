@@ -8,6 +8,7 @@ stats_df <- read.csv("./data/stats_df.csv")
 # and remove Hemipterans; we're not interested in this order for this analysis
 stats_df %>%
   filter(Order != "Hemiptera") -> rawData
+rm(stats_df)
 rawData %>%
   expand(Exact.Site, Month_Year, BIN) -> fullData
 # now let's use lubridate to turn the month/year timestamp into actual time data
@@ -89,7 +90,7 @@ order.key$Order_ID <- as.numeric(factor(order.key$Order))
 orders$Order <- as.numeric(as.factor(orders$Order))
 orders$BIN <- as.numeric(as.factor(orders$BIN))
 orders <- unique(orders[,c('Order','BIN')])
-
+rm(tmp, tmp2)
 # 20260417 - I might have to use nested indexing to handle model computation
 # has_data <- which(!is.na(y), arr.ind = TRUE)
 # y_long <- y[!is.na(y)]
@@ -100,13 +101,19 @@ orders <- unique(orders[,c('Order','BIN')])
 # these covariates are also indexed by site/time, so it gets a similar array to 
 # the species bin data
 rawData %>%
-  select(Exact.Site, Month, wind_speed_ms_mean, PM2.5) %>%
+  select(Exact.Site, Month, wind_speed_ms_mean, PM2.5, n_smoke, precipitation_accumulation_mm, 
+         max_relative_humidity_mean, max_air_temperature_mean_K) %>%
   unique() -> covariates
 covariates$Exact.Site <- as.numeric(as.factor(covariates$Exact.Site))
 covariates$Month <- as.numeric(as.factor(covariates$Month))
 covariates$wind_speed_ms_mean <- scale(covariates$wind_speed_ms_mean)
 covariates$PM2.5 <- scale(covariates$PM2.5)
+covariates$n_smoke <- scale(covariates$n_smoke)
+covariates$max_relative_humidity_mean <- scale(covariates$max_relative_humidity_mean)
+covariates$max_air_temperature_mean_K <- scale(covariates$max_air_temperature_mean_K)
+covariates$precipitation_accumulation_mm <- scale(covariates$precipitation_accumulation_mm)
 
+# making covariate arrays
 wind <- array(data = NA, dim = c(max(covariates$Exact.Site),
                                  max(covariates$Month)))
 for(i in 1:nrow(covariates)){
@@ -136,6 +143,46 @@ for(i in 1:nrow(covariates)){
 }
 PM[is.na(PM)] <- 0
 
+smoke <- array(data = NA, dim = c(max(covariates$Exact.Site),
+                               max(covariates$Month)))
+for(i in 1:nrow(covariates)){
+  smoke[
+    covariates$Exact.Site[i],
+    covariates$Month[i]
+  ] <- covariates$n_smoke[i]
+}
+smoke[is.na(smoke)] <- 0
+# temperature
+temp <- array(data = NA, dim = c(max(covariates$Exact.Site),
+                                  max(covariates$Month)))
+for(i in 1:nrow(covariates)){
+  temp[
+    covariates$Exact.Site[i],
+    covariates$Month[i]
+  ] <- covariates$max_air_temperature_mean_K[i]
+}
+temp[is.na(temp)] <- 0
+# humidity
+humid <- array(data = NA, dim = c(max(covariates$Exact.Site),
+                                 max(covariates$Month)))
+for(i in 1:nrow(covariates)){
+  humid[
+    covariates$Exact.Site[i],
+    covariates$Month[i]
+  ] <- covariates$max_relative_humidity_mean[i]
+}
+humid[is.na(humid)] <- 0
+# precip
+precip <- array(data = NA, dim = c(max(covariates$Exact.Site),
+                                  max(covariates$Month)))
+for(i in 1:nrow(covariates)){
+  precip[
+    covariates$Exact.Site[i],
+    covariates$Month[i]
+  ] <- covariates$precipitation_accumulation_mm[i]
+}
+precip[is.na(precip)] <- 0
+
 #### Run Model ####
 data_list <- list(
   nSite = max(site.key$Site_ID),
@@ -146,7 +193,11 @@ data_list <- list(
   y = y,
   J = J,
   wind = wind,
-  PM = PM
+  PM = PM,
+  smoke = smoke,
+  temp = temp,
+  humid = humid,
+  precip = precip
 )
 
 source("./functions/inits.R")
@@ -168,15 +219,15 @@ my_mod <- runjags::run.jags(
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 120000,
-  sample = 180000,
-  adapt = 10000,
+  burnin = 100,
+  sample = 1000,
+  adapt = 100,
   modules = "glm",
   thin = 3,
-  method = "parallel",
-  jags = runjags.getOption("jagspath")
+  method = "parallel"#,
+  # jags = runjags.getOption("jagspath")
 )
-# system("say Calculations Complete.") # only works on Mac
+system("say Calculations Complete.") # only works on Mac
 varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "mu.mu.beta2","mu.tau.beta2",
             "mu.beta0","mu.beta1","mu.beta2","tau.beta0","tau.beta1","tau.beta2",
