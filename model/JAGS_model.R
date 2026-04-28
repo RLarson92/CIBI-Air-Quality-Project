@@ -90,7 +90,7 @@ model{
         # Observation Process
         y[i,j,t] ~ dbinom(p[i,j,t], N[i,j,t])
         logit(p[i,j,t]) <- alpha0[i] + alpha1*J[j,t] + alpha2[i]*wind[j,t] + 
-          alpha3*temp[j,t] + alpha4*humid[j,t]
+          alpha3*temp[j,t]^2 + alpha4*humid[j,t]
       }
     }
   }
