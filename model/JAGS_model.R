@@ -17,6 +17,9 @@ model{
   beta3 ~ dnorm(0, 0.1)
   beta4 ~ dnorm(0, 0.1)
   beta5 ~ dnorm(0, 0.1)
+  mu.phi ~ dnorm(0, 0.1)
+  tau.phi ~ dgamma(1,1)
+  sig.phi <- 1 / sqrt(tau.phi)
 
   # for captures
   mu.mu.alpha0 ~ dnorm(0, 0.1)
@@ -51,10 +54,10 @@ model{
   sd.alpha2 <- 1 / sqrt(tau.alpha2)
   
   ## Species-Specific Priors
-  # species-specific coefficients
   for (i in 1:nTaxa) {
     alpha0[i] ~ dnorm(mu.alpha0[order[i]], tau.alpha0)
     alpha2[i] ~ dnorm(mu.alpha2[order[i]], tau.alpha2)
+    phi[i] ~ dnorm(mu.phi, tau.phi)
     for (j in 1:nSite){
       beta0[i,j] ~ dnorm(mu.beta0[order[i]], tau.beta0)
       beta1[i,j] ~ dnorm(mu.beta1[order[i]], tau.beta1)
@@ -68,13 +71,23 @@ model{
   # State Process
   for (i in 1:nTaxa) {
     for (j in 1:nSite) {
-      w[i,j] ~ dbern(omega[i,j])
-      for (t in 1:nMonth){
+      w[i,j] ~ dbern(1-omega[i,j])
+      N[i,j,1] ~ dpois(lambda[i,j,1]*w[i,j])
+      log(lambda[i,j,1]) <- beta0[i,j] + beta1[i,j]*PM[j,1] + 
+        beta2[i,j]*smoke[j,1] + beta3*temp[j,1] + beta4*humid[j,1] + 
+        beta5*precip[j,1]
+      # Observation Process
+      y[i,j,1] ~ dbinom(p[i,j,1], N[i,j,1])
+      logit(p[i,j,1]) <- alpha0[i] + alpha1*J[j,1] + alpha2[i]*wind[j,1] + 
+        alpha3*temp[j,1]^2 + alpha4*humid[j,1]
+  # Subsequent Sampling Months
+  # State Process
+      for (t in 2:nMonth){
         N[i,j,t] ~ dpois(lambda[i,j,t]*w[i,j])
         log(lambda[i,j,t]) <- beta0[i,j] + beta1[i,j]*PM[j,t] + 
           beta2[i,j]*smoke[j,t] + beta3*temp[j,t] + beta4*humid[j,t] + 
-          beta5*precip[j,t]
-  # Observation Process
+          beta5*precip[j,t] + phi[i]*log(N[i,j,t-1]+1)
+        # Observation Process
         y[i,j,t] ~ dbinom(p[i,j,t], N[i,j,t])
         logit(p[i,j,t]) <- alpha0[i] + alpha1*J[j,t] + alpha2[i]*wind[j,t] + 
           alpha3*temp[j,t] + alpha4*humid[j,t]

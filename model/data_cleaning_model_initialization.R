@@ -212,6 +212,7 @@ my_mod <- runjags::run.jags(
               "mu.mu.beta2","mu.tau.beta2",
               "mu.beta0","mu.beta1","mu.beta2","tau.beta0","tau.beta1","tau.beta2",
               "beta3","beta4","beta5",
+              "mu.phi","tau.phi",
               "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
               "mu.alpha0","tau.alpha0","alpha1","mu.alpha2","tau.alpha2",
               "alpha3","alpha4",
@@ -224,8 +225,8 @@ my_mod <- runjags::run.jags(
   adapt = 100,
   modules = "glm",
   thin = 3,
-  method = "parallel"#,
-  # jags = runjags.getOption("jagspath")
+  method = "parallel",
+  jags = runjags.getOption("jagspath")
 )
 system("say Calculations Complete.") # only works on Mac
 varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
