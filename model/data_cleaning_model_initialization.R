@@ -4,33 +4,39 @@ library(tidyr)
 #### Data Loading & Clean-up ####
 # let's load in the species bin counts by site x month
 stats_df <- read.csv("./data/stats_df.csv")
-
-# and remove Hemipterans; we're not interested in this order for this analysis
-stats_df %>%
-  filter(Order != "Hemiptera") -> rawData
-rm(stats_df)
-rawData %>%
-  expand(Exact.Site, Month_Year, BIN) -> fullData
 # now let's use lubridate to turn the month/year timestamp into actual time data
-fullData$Month <- lubridate::parse_date_time(fullData$Month_Year, "b-y")
+stats_df$Month <- lubridate::parse_date_time(stats_df$Month_Year, "b-y")
 # this adds a column to the right end of the dataframe with a date for each
 # sample. the date defaults to the 1st of the month, but that doesn't matter for
 # our analysis
+
+# we're going to do some filtering to remove all data before Feb '23 and after
+# Oct '23, and we'll remove Hemiptera since we're not interested in this Order
+stats_df %>%
+  filter(between(Month, as.Date("2023-02-01"), as.Date("2023-10-01"))) %>%
+  filter_out(Order == "Hemiptera") -> filteredData
+rm(stats_df)
+# now we'll expand our dataframe to include all combos of site x month x taxa
+filteredData %>%
+  expand(Exact.Site, Month, BIN) -> fullData
 
 # now let's read in our sampling effort data frame
 sampling_days <- read.csv("./data/sampling_days.csv")
 # and get the correct time data
 sampling_days$Month <- lubridate::parse_date_time(sampling_days$Month_Year, 
                                                   "y-b")
+# and remove the same dates as before
+sampling_days %>%
+  filter(between(Month, as.Date("2023-02-01"), as.Date("2023-10-01"))) -> sampling_days
+
 # Now let's joing the sample days info with the expanded dataset
 tmp <- left_join(fullData, sampling_days, by=c("Exact.Site" = "Site",
                                                "Month" = "Month"))
-# and remove the "Month_Year" columns that are no longer useful
+# and remove the "Month_Year" column that is no longer useful
 tmp %>%
-  select(-c(Month_Year.x, Month_Year.y)) -> tmp
+  select(-c(Month_Year)) -> tmp
 # now we'll add the abundance data to the correct places
-rawData$Month <- lubridate::parse_date_time(rawData$Month_Year, "b-y")
-tmp2 <- right_join(rawData, tmp, by=c("Exact.Site" = "Exact.Site",
+tmp2 <- right_join(filteredData, tmp, by=c("Exact.Site" = "Exact.Site",
                                       "Month" = "Month",
                                       "BIN" = "BIN"))
 tmp2 %>%
@@ -39,7 +45,8 @@ tmp2 %>%
   mutate(
     Abundnace = replace_when(Abundnace, is.na(Abundnace) & Days_on_Trap > 0 ~ 0)
   ) -> tmp1
-tmp1$Days_on_Trap[is.na(tmp1$Days_on_Trap)] <- 0
+# replace non-sampled months with 0's if necessary
+# tmp1$Days_on_Trap[is.na(tmp1$Days_on_Trap)] <- 0
 
 # let's put the data into the correct order. first sort by species bin, then by
 # month/year, then by site
@@ -82,7 +89,7 @@ for(i in 1:nrow(tmp1)){
   ] <- tmp1$Days_on_Trap[i]
 }
 # getting order information
-rawData %>%
+filteredData %>%
   select(Order, BIN) -> orders
 order.key <- data.frame(Order = sort(unique(orders$Order)))
 order.key$Order_ID <- as.numeric(factor(order.key$Order))
@@ -91,16 +98,13 @@ orders$Order <- as.numeric(as.factor(orders$Order))
 orders$BIN <- as.numeric(as.factor(orders$BIN))
 orders <- unique(orders[,c('Order','BIN')])
 rm(tmp, tmp2)
-# 20260417 - I might have to use nested indexing to handle model computation
-# has_data <- which(!is.na(y), arr.ind = TRUE)
-# y_long <- y[!is.na(y)]
 
 #### Covariate Processing ####
 # our analysis includes 2 covariates on capture rates: average wind speed during
 # the sampling period (wind), & number of trap-days (J)
 # these covariates are also indexed by site/time, so it gets a similar array to 
 # the species bin data
-rawData %>%
+filteredData %>%
   select(Exact.Site, Month, wind_speed_ms_mean, PM2.5, n_smoke, precipitation_accumulation_mm, 
          max_relative_humidity_mean, max_air_temperature_mean_K) %>%
   unique() -> covariates
@@ -114,6 +118,7 @@ covariates$max_air_temperature_mean_K <- scale(covariates$max_air_temperature_me
 covariates$precipitation_accumulation_mm <- scale(covariates$precipitation_accumulation_mm)
 
 # making covariate arrays
+# wind speed
 wind <- array(data = NA, dim = c(max(covariates$Exact.Site),
                                  max(covariates$Month)))
 for(i in 1:nrow(covariates)){
@@ -123,16 +128,7 @@ for(i in 1:nrow(covariates)){
   ] <- covariates$wind_speed_ms_mean[i]
 }
 wind[is.na(wind)] <- 0
-# hasData_wind <- which(!is.na(wind), arr.ind = TRUE)
-# ob_cov_long <- matrix(1,
-#                       nrow(hasData_wind),
-#                       ncol = 2)
-# for(i in 1:nrow(hasData_wind)){
-#   ob_cov_long[i,2] <- wind[
-#     hasData_wind[i,1],
-#     hasData_wind[i,2]
-#   ]
-# }
+# particulate matter (i.e., air pollution)
 PM <- array(data = NA, dim = c(max(covariates$Exact.Site),
                                max(covariates$Month)))
 for(i in 1:nrow(covariates)){
@@ -142,7 +138,7 @@ for(i in 1:nrow(covariates)){
   ] <- covariates$PM2.5[i]
 }
 PM[is.na(PM)] <- 0
-
+# smokey days
 smoke <- array(data = NA, dim = c(max(covariates$Exact.Site),
                                max(covariates$Month)))
 for(i in 1:nrow(covariates)){
@@ -172,7 +168,7 @@ for(i in 1:nrow(covariates)){
   ] <- covariates$max_relative_humidity_mean[i]
 }
 humid[is.na(humid)] <- 0
-# precip
+# precipitation accumulation
 precip <- array(data = NA, dim = c(max(covariates$Exact.Site),
                                   max(covariates$Month)))
 for(i in 1:nrow(covariates)){
