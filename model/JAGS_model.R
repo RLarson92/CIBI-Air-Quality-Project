@@ -25,7 +25,6 @@ model{
   mu.mu.alpha0 ~ dnorm(0, 0.1)
   mu.tau.alpha0 ~ dgamma(1, 1)
   mu.sig.alpha0 <- 1 / sqrt(mu.tau.alpha0)
-  alpha1 ~ dnorm(0, 0.1)
   mu.mu.alpha2 ~ dnorm(0, 0.1)
   mu.tau.alpha2 ~ dgamma(1,1)
   mu.sig.alpha2 <- 1 / sqrt(mu.tau.alpha2)
@@ -52,19 +51,22 @@ model{
   sd.beta2 <- 1 / sqrt(tau.beta2)
   tau.beta3 ~ dgamma(1,1)
   sd.beta3 <- 1 / sqrt(tau.beta3)
-  
-  tau.alpha0 ~ dgamma(1,1)
-  sd.alpha0 <- 1 / sqrt(tau.alpha0)
-  tau.alpha2 ~ dgamma(1,1)
-  sd.alpha2 <- 1 / sqrt(tau.alpha2)
-  tau.alpha3 ~ dgamma(1,1)
-  sd.alpha3 <- 1 / sqrt(tau.alpha3)
+  tau.shape ~ dunif(0.001, 10)
+  tau.rate ~ dunif(0.001, 10)
+  for(i in 1:nTaxa){
+    tau.alpha0[i] ~ dgamma(tau.shape, tau.rate)
+    sd.alpha0[i] <- 1 / sqrt(tau.alpha0[i])
+    tau.alpha2[i] ~ dgamma(tau.shape, tau.rate)
+    sd.alpha2[i] <- 1 / sqrt(tau.alpha2[i])
+    tau.alpha3[i] ~ dgamma(tau.shape, tau.rate)
+    sd.alpha3[i] <- 1 / sqrt(tau.alpha3[i])
+  }
   
   ## Species-Specific Priors
   for (i in 1:nTaxa) {
-    alpha0[i] ~ dnorm(mu.alpha0[order[i]], tau.alpha0)
-    alpha2[i] ~ dnorm(mu.alpha2[order[i]], tau.alpha2)
-    alpha3[i] ~ dnorm(mu.alpha3[order[i]], tau.alpha3)
+    alpha0[i] ~ dnorm(mu.alpha0[order[i]], tau.alpha0[i])
+    alpha2[i] ~ dnorm(mu.alpha2[order[i]], tau.alpha2[i])
+    alpha3[i] ~ dnorm(mu.alpha3[order[i]], tau.alpha3[i])
     phi[i] ~ dnorm(mu.phi, tau.phi)
     for (j in 1:nSite){
       beta0[i,j] ~ dnorm(mu.beta0[order[i]], tau.beta0)
@@ -86,7 +88,7 @@ model{
         beta2[i,j]*smoke[j,1] + beta3[i,j]*PC1[j,1]
       # Observation Process
       y[i,j,1] ~ dbinom(p[i,j,1], N[i,j,1])
-      logit(p[i,j,1]) <- alpha0[i] + alpha1*J[j,1] + alpha2[i]*PC1[j,1] + 
+      logit(p[i,j,1]) <- alpha0[i] + alpha2[i]*PC1[j,1] + 
         alpha3[i]*PC2[j,1]
   # Subsequent Sampling Months
   # State Process
@@ -96,7 +98,7 @@ model{
           beta2[i,j]*smoke[j,t] + beta3[i,j]*PC1[j,t] + phi[i]*log(N[i,j,t-1]+1)
         # Observation Process
         y[i,j,t] ~ dbinom(p[i,j,t], N[i,j,t])
-        logit(p[i,j,t]) <- alpha0[i] + alpha1*J[j,t] + alpha2[i]*PC1[j,t] + 
+        logit(p[i,j,t]) <- alpha0[i] + alpha2[i]*PC1[j,t] + 
           alpha3[i]*PC2[j,t]
       }
     }
@@ -110,4 +112,10 @@ model{
       Nsite[j,t]<-sum(N[,j,t]) # abundance of species at each site each month
     }
   }
+  # for(i in 1:nTaxa){
+  #   for(j in 1:nsite){
+  #     p[i,j] <- N[i,j,]/sum(N[,j,])
+  #     Hp[j] <- -1*sum(p[,j,]*log(p[,j,]))
+  #   }
+  # }
 }

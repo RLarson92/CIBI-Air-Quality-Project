@@ -14,7 +14,12 @@ rawData$Month <- lubridate::parse_date_time(rawData$Month_Year, "b-y")
 # Oct '23, and we'll remove Hemiptera since we're not interested in this Order
 rawData %>%
   filter(between(Month, as.Date("2023-02-01"), as.Date("2023-10-01"))) %>%
-  filter_out(Order == "Hemiptera") -> filteredData
+  filter_out(Order == "Hemiptera") #%>%
+  # filter(BIN %in% c("BOLD:AAH414","BOLD:AAM6190","BOLD:ACM1566","BOLD:AAH3962",
+  #                   "BOLD:AAG1226","BOLD:AAG3145","BOLD:ABY2441","BOLD:AAV0060",
+  #                   "BOLD:AAH4833","BOLD:ACJ9684","BOLD:AAN7475","BOLD:ABW8320",
+  #                   "BOLD:ABX0641","BOLD:ABX1705","BOLD:AAFQ5322","BOLD:ADE2154")
+-> filteredData
 rm(rawData)
 # now we'll expand our dataframe to include all combos of site x month x taxa
 filteredData %>%
@@ -186,7 +191,6 @@ data_list <- list(
   nMonth = max(tmp1$Month),
   order = orders$Order,
   y = y,
-  J = J,
   PM = PM,
   smoke = smoke,
   PC1 = PC1,
@@ -202,20 +206,21 @@ runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c(# hyper-hyperpriors for abundance
-              "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
-              "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
-              "mu.phi","tau.phi",
-              # hyperpriors for order-level responses in abundance
-              "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-              "tau.beta0","tau.beta1","tau.beta2","tau.beta3",
-              # hyper-hyperpriors for capture/detection
-              "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
-              "mu.mu.alpha3","mu.tau.alpha3",
-              # hyperpriors for order-level responses in capture rates
-              "mu.alpha0","tau.alpha0","alpha1","mu.alpha2","tau.alpha2",
-              "mu.alpha3","tau.alpha3",
-              # derived parameters
-              "Ntotal", "Nsite"),
+    "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
+    "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
+    "mu.phi","tau.phi",
+    # hyperpriors for order-level responses in abundance
+    "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
+    "tau.beta0","tau.beta1","tau.beta2","tau.beta3",
+    # hyper-hyperpriors for capture/detection
+    "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
+    "mu.mu.alpha3","mu.tau.alpha3",
+    # hyperpriors for order-level responses in capture rates
+    "tau.rate","tau.shape",
+    "mu.alpha0","tau.alpha0","mu.alpha2","tau.alpha2",
+    "mu.alpha3","tau.alpha3",
+    # derived parameters
+    "Ntotal", "Nsite"),
   data = data_list,
   n.chains = 3,
   inits = inits,
@@ -235,7 +240,7 @@ varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "tau.beta0","tau.beta1","tau.beta2","tau.beta3",
             "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
             "mu.mu.alpha3","mu.tau.alpha3",
-            "mu.alpha0","tau.alpha0","alpha1","mu.alpha2","tau.alpha2",
-            "mu.alpha3","tau.alpha3")
+            "tau.shape","tau.rate",
+            "mu.alpha0","mu.alpha2","mu.alpha3")
 runjags::add.summary(my_mod, vars = varSum)
 plot(my_mod, plot.type = "trace", vars = varSum)
