@@ -10,17 +10,23 @@ rawData$Month <- lubridate::parse_date_time(rawData$Month_Year, "b-y")
 # sample. the date defaults to the 1st of the month, but that doesn't matter for
 # our analysis
 
-# we're going to do some filtering to remove all data before Feb '23 and after
-# Oct '23, and we'll remove Hemiptera since we're not interested in this Order
-rawData %>%
+# we're going to do some filtering:
+filteredData <- rawData %>%
+  # removing all data before Feb '23 and after Oct '23 to ensure consistent
+  # sampling windows for all sites
   filter(between(Month, as.Date("2023-02-01"), as.Date("2023-10-01"))) %>%
-  filter_out(Order == "Hemiptera") #%>%
-  # filter(BIN %in% c("BOLD:AAH414","BOLD:AAM6190","BOLD:ACM1566","BOLD:AAH3962",
-  #                   "BOLD:AAG1226","BOLD:AAG3145","BOLD:ABY2441","BOLD:AAV0060",
-  #                   "BOLD:AAH4833","BOLD:ACJ9684","BOLD:AAN7475","BOLD:ABW8320",
-  #                   "BOLD:ABX0641","BOLD:ABX1705","BOLD:AAFQ5322","BOLD:ADE2154")
--> filteredData
+  # removing "Hemiptera" since we're not interested in this Order
+  filter_out(Order == "Hemiptera") %>%
+  # grouping by BIN and calculating total Abundance
+  group_by(BIN) %>%
+  mutate(totalAbundance = sum(Abundnace)) %>%
+  # then, lastly, removing singletons 
+  # i.e., taxa represented by less than 10 individuals for the whole study
+  filter_out(totalAbundance < 10)
 rm(rawData)
+filteredData <- filteredData %>%
+  select(-totalAbundance)
+filteredData <- as.data.frame(filteredData)
 # now we'll expand our dataframe to include all combos of site x month x taxa
 filteredData %>%
   expand(Exact.Site, Month, BIN) -> fullData
@@ -220,15 +226,16 @@ my_mod <- runjags::run.jags(
     "mu.alpha0","tau.alpha0","mu.alpha2","tau.alpha2",
     "mu.alpha3","tau.alpha3",
     # derived parameters
-    "Ntotal", "Nsite"),
+    "Nsite"#,"H"
+    ),
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 100,
+  burnin = 500,
   sample = 1000,
-  adapt = 100,
+  adapt = 200,
   modules = "glm",
-  thin = 3,
+  thin = 5,
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
@@ -237,10 +244,16 @@ varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
             "mu.phi","tau.phi",
             "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-            "tau.beta0","tau.beta1","tau.beta2","tau.beta3",
+            "tau.beta0","tau.beta1","tau.beta2",
             "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
             "mu.mu.alpha3","mu.tau.alpha3",
             "tau.shape","tau.rate",
             "mu.alpha0","mu.alpha2","mu.alpha3")
-runjags::add.summary(my_mod, vars = varSum)
-plot(my_mod, plot.type = "trace", vars = varSum)
+results <- runjags::add.summary(my_mod, vars = varSum)
+# plot(my_mod, plot.type = "trace", vars = varSum)
+
+# mc <- coda::as.mcmc(my_mod)
+# mc <- as.matrix(mc)
+# set.seed(123)
+# source("./functions/split_mcmc.R")
+# mc <- split_mcmc(mc)

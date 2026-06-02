@@ -49,8 +49,6 @@ model{
   sd.beta1 <- 1 / sqrt(tau.beta1)
   tau.beta2 ~ dgamma(1,1)
   sd.beta2 <- 1 / sqrt(tau.beta2)
-  tau.beta3 ~ dgamma(1,1)
-  sd.beta3 <- 1 / sqrt(tau.beta3)
   tau.shape ~ dunif(0.001, 10)
   tau.rate ~ dunif(0.001, 10)
   for(i in 1:nTaxa){
@@ -60,6 +58,8 @@ model{
     sd.alpha2[i] <- 1 / sqrt(tau.alpha2[i])
     tau.alpha3[i] ~ dgamma(tau.shape, tau.rate)
     sd.alpha3[i] <- 1 / sqrt(tau.alpha3[i])
+    tau.beta3[i] ~ dgamma(tau.shape, tau.rate)
+    sd.beta3[i] <- 1 / sqrt(tau.beta3[i])
   }
   
   ## Species-Specific Priors
@@ -72,7 +72,7 @@ model{
       beta0[i,j] ~ dnorm(mu.beta0[order[i]], tau.beta0)
       beta1[i,j] ~ dnorm(mu.beta1[order[i]], tau.beta1)
       beta2[i,j] ~ dnorm(mu.beta2[order[i]], tau.beta2)
-      beta3[i,j] ~ dnorm(mu.beta3[order[i]], tau.beta3)
+      beta3[i,j] ~ dnorm(mu.beta3[order[i]], tau.beta3[i])
       omega[i,j] ~ dnorm(mu.omega, tau.omega)
     }
   }
@@ -104,18 +104,21 @@ model{
     }
   }
   # Derived Parameters
-  for(i in 1:nTaxa){
-    Ntotal[i]<-sum(N[i,,]) # total abundance of each species
-  }
   for(j in 1:nSite){
     for(t in 1:nMonth){
-      Nsite[j,t]<-sum(N[,j,t]) # abundance of species at each site each month
+      Nsite[j,t]<-sum(N[,j,t]) # abundance of all insects at each site each month
     }
   }
   # for(i in 1:nTaxa){
-  #   for(j in 1:nsite){
-  #     p[i,j] <- N[i,j,]/sum(N[,j,])
-  #     Hp[j] <- -1*sum(p[,j,]*log(p[,j,]))
+  #   for(j in 1:nSite){
+  #     for(t in 1:nMonth){
+  #       p[i,j,t] <- N[i,j,t]/sum(N[,j,t])
+  #     }
+  #   }
+  # }
+  # for(j in 1:nSite){
+  #   for(t in 1:nMonth){
+  #     H[j,t] <- -1*sum(p[,j,t]) # Shannon's diversity for each site each month
   #   }
   # }
 }
