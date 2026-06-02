@@ -18,7 +18,7 @@ model{
   mu.tau.beta3 ~ dgamma(1, 1)
   mu.sig.beta3 <- 1 / sqrt(mu.tau.beta3)
   mu.phi ~ dnorm(0, 0.1)
-  tau.phi ~ dgamma(1,1)
+  tau.phi ~ dgamma(2,1)
   sig.phi <- 1 / sqrt(tau.phi)
 
   # for captures
@@ -42,15 +42,8 @@ model{
     mu.alpha2[q] ~ dnorm(mu.mu.alpha2, mu.tau.alpha2)
     mu.alpha3[q] ~ dnorm(mu.mu.alpha3, mu.tau.alpha3)
   }
-  
-  tau.beta0 ~ dgamma(1,1)
-  sd.beta0 <- 1 / sqrt(tau.beta0)
-  tau.beta1 ~ dgamma(1,1)
-  sd.beta1 <- 1 / sqrt(tau.beta1)
-  tau.beta2 ~ dgamma(1,1)
-  sd.beta2 <- 1 / sqrt(tau.beta2)
-  tau.shape ~ dunif(0.001, 10)
-  tau.rate ~ dunif(0.001, 10)
+  tau.shape ~ dunif(0.001, 5)
+  tau.rate ~ dunif(0.001, 5)
   for(i in 1:nTaxa){
     tau.alpha0[i] ~ dgamma(tau.shape, tau.rate)
     sd.alpha0[i] <- 1 / sqrt(tau.alpha0[i])
@@ -58,6 +51,12 @@ model{
     sd.alpha2[i] <- 1 / sqrt(tau.alpha2[i])
     tau.alpha3[i] ~ dgamma(tau.shape, tau.rate)
     sd.alpha3[i] <- 1 / sqrt(tau.alpha3[i])
+    tau.beta0[i] ~ dgamma(tau.shape, tau.rate)
+    sd.beta0[i] <- 1 / sqrt(tau.beta0[i])
+    tau.beta1[i] ~ dgamma(tau.shape, tau.rate)
+    sd.beta1[i] <- 1 / sqrt(tau.beta1[i])
+    tau.beta2[i] ~ dgamma(tau.shape, tau.rate)
+    sd.beta2[i] <- 1 / sqrt(tau.beta2[i])
     tau.beta3[i] ~ dgamma(tau.shape, tau.rate)
     sd.beta3[i] <- 1 / sqrt(tau.beta3[i])
   }
@@ -69,9 +68,9 @@ model{
     alpha3[i] ~ dnorm(mu.alpha3[order[i]], tau.alpha3[i])
     phi[i] ~ dnorm(mu.phi, tau.phi)
     for (j in 1:nSite){
-      beta0[i,j] ~ dnorm(mu.beta0[order[i]], tau.beta0)
-      beta1[i,j] ~ dnorm(mu.beta1[order[i]], tau.beta1)
-      beta2[i,j] ~ dnorm(mu.beta2[order[i]], tau.beta2)
+      beta0[i,j] ~ dnorm(mu.beta0[order[i]], tau.beta0[i])
+      beta1[i,j] ~ dnorm(mu.beta1[order[i]], tau.beta1[i])
+      beta2[i,j] ~ dnorm(mu.beta2[order[i]], tau.beta2[i])
       beta3[i,j] ~ dnorm(mu.beta3[order[i]], tau.beta3[i])
       omega[i,j] ~ dnorm(mu.omega, tau.omega)
     }

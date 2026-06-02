@@ -21,8 +21,8 @@ filteredData <- rawData %>%
   group_by(BIN) %>%
   mutate(totalAbundance = sum(Abundnace)) %>%
   # then, lastly, removing singletons 
-  # i.e., taxa represented by less than 10 individuals for the whole study
-  filter_out(totalAbundance < 10)
+  # i.e., taxa represented by less than 75 individuals for the whole study
+  filter_out(totalAbundance < 75)
 rm(rawData)
 filteredData <- filteredData %>%
   select(-totalAbundance)
@@ -212,6 +212,7 @@ runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c(# hyper-hyperpriors for abundance
+    "mu.omega","tau.omega",
     "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
     "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
     "mu.phi","tau.phi",
@@ -231,26 +232,27 @@ my_mod <- runjags::run.jags(
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 500,
+  burnin = 3500,
   sample = 1000,
-  adapt = 200,
+  adapt = 500,
   modules = "glm",
   thin = 5,
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
 
-varSum <- c("mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
+varSum <- c("mu.omega","tau.omega",
+            "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
             "mu.phi","tau.phi",
             "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-            "tau.beta0","tau.beta1","tau.beta2",
             "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
             "mu.mu.alpha3","mu.tau.alpha3",
             "tau.shape","tau.rate",
             "mu.alpha0","mu.alpha2","mu.alpha3")
 results <- runjags::add.summary(my_mod, vars = varSum)
-# plot(my_mod, plot.type = "trace", vars = varSum)
+results
+plot(my_mod, plot.type = "trace", vars = varSum)
 
 # mc <- coda::as.mcmc(my_mod)
 # mc <- as.matrix(mc)
