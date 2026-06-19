@@ -21,8 +21,8 @@ filteredData <- rawData %>%
   group_by(BIN) %>%
   mutate(totalAbundance = sum(Abundnace)) %>%
   # then, lastly, removing singletons 
-  # i.e., taxa represented by less than 75 individuals for the whole study
-  filter_out(totalAbundance < 75)
+  # i.e., taxa represented by less than 95 individuals for the whole study
+  filter_out(totalAbundance < 580) #minimum for at least 2 taxa from Beetles
 rm(rawData)
 filteredData <- filteredData %>%
   select(-totalAbundance)
@@ -223,7 +223,7 @@ my_mod <- runjags::run.jags(
     "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
     "mu.mu.alpha3","mu.tau.alpha3",
     # hyperpriors for order-level responses in capture rates
-    "tau.rate","tau.shape",
+    "tau.rate.alpha","tau.shape.alpha","tau.shape.beta","tau.rate.beta",
     "mu.alpha0","tau.alpha0","mu.alpha2","tau.alpha2",
     "mu.alpha3","tau.alpha3",
     # derived parameters
@@ -232,11 +232,11 @@ my_mod <- runjags::run.jags(
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 3500,
-  sample = 1000,
-  adapt = 500,
+  burnin = 50000,
+  sample = 150000,
+  adapt = 5000,
   modules = "glm",
-  thin = 5,
+  thin = 20,
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
@@ -248,7 +248,7 @@ varSum <- c("mu.omega","tau.omega",
             "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
             "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
             "mu.mu.alpha3","mu.tau.alpha3",
-            "tau.shape","tau.rate",
+            "tau.shape.alpha","tau.rate.alpha","tau.shape.beta","tau.rate.beta",
             "mu.alpha0","mu.alpha2","mu.alpha3")
 results <- runjags::add.summary(my_mod, vars = varSum)
 results
