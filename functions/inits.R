@@ -26,6 +26,8 @@ inits <- function(chain){
       mu.alpha0 = rnorm(data_list$nOrder),
       mu.alpha2 = rnorm(data_list$nOrder),
       mu.alpha3 = rnorm(data_list$nOrder),
+      tau.shape.alpha0 = runif(1, 0.1, 3),
+      tau.rate.alpha0 = runif(1, 0.1, 3),
       tau.shape.alpha = runif(1, 0.1, 3),
       tau.rate.alpha = runif(1, 0.1, 3),
       tau.shape.beta = runif(1, 0.1, 3),

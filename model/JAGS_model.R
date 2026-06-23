@@ -42,12 +42,14 @@ model{
     mu.alpha2[q] ~ dnorm(mu.mu.alpha2, mu.tau.alpha2)
     mu.alpha3[q] ~ dnorm(mu.mu.alpha3, mu.tau.alpha3)
   }
+  tau.shape.alpha0 ~ dunif(0.001, 5)
+  tau.rate.alpha0 ~ dunif(0.001, 5)
   tau.shape.alpha ~ dunif(0.001, 5)
   tau.rate.alpha ~ dunif(0.001, 5)
   tau.shape.beta ~ dunif(0.001, 5)
   tau.rate.beta ~ dunif(0.001, 5)
   for(i in 1:nTaxa){
-    tau.alpha0[i] ~ dgamma(tau.shape.alpha, tau.rate.alpha)
+    tau.alpha0[i] ~ dgamma(tau.shape.alpha0, tau.rate.alpha0)
     sd.alpha0[i] <- 1 / sqrt(tau.alpha0[i])
     tau.alpha2[i] ~ dgamma(tau.shape.alpha, tau.rate.alpha)
     sd.alpha2[i] <- 1 / sqrt(tau.alpha2[i])

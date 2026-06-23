@@ -22,7 +22,7 @@ filteredData <- rawData %>%
   mutate(totalAbundance = sum(Abundnace)) %>%
   # then, lastly, removing singletons 
   # i.e., taxa represented by less than 95 individuals for the whole study
-  filter_out(totalAbundance < 580) #minimum for at least 2 taxa from Beetles
+  filter_out(totalAbundance < 475) #minimum for at least 3 Taxa from Lepid.
 rm(rawData)
 filteredData <- filteredData %>%
   select(-totalAbundance)
@@ -208,7 +208,8 @@ source("./functions/inits.R")
 library(runjags)
 # I guess my JAGS isn't stored where {runjags} expects it to be, so I have to 
 # tell it where to look
-runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
+# runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
+runjags.options(jagspath = "C:/Users/Rachel/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c(# hyper-hyperpriors for abundance
@@ -223,6 +224,7 @@ my_mod <- runjags::run.jags(
     "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
     "mu.mu.alpha3","mu.tau.alpha3",
     # hyperpriors for order-level responses in capture rates
+    "tau.shape.alpha0","tau.rate.alpha0",
     "tau.rate.alpha","tau.shape.alpha","tau.shape.beta","tau.rate.beta",
     "mu.alpha0","tau.alpha0","mu.alpha2","tau.alpha2",
     "mu.alpha3","tau.alpha3",
@@ -240,7 +242,6 @@ my_mod <- runjags::run.jags(
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
-
 varSum <- c("mu.omega","tau.omega",
             "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
@@ -253,6 +254,7 @@ varSum <- c("mu.omega","tau.omega",
 results <- runjags::add.summary(my_mod, vars = varSum)
 results
 plot(my_mod, plot.type = "trace", vars = varSum)
+saveRDS(my_mod, "./modelResults.RDS") 
 
 # mc <- coda::as.mcmc(my_mod)
 # mc <- as.matrix(mc)
