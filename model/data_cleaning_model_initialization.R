@@ -21,8 +21,7 @@ filteredData <- rawData %>%
   group_by(BIN) %>%
   mutate(totalAbundance = sum(Abundnace)) %>%
   # then, lastly, removing singletons 
-  # i.e., taxa represented by less than 95 individuals for the whole study
-  filter_out(totalAbundance < 475) #minimum for at least 3 Taxa from Lepid.
+  filter_out(totalAbundance < 95) #minimum for at least 3 Taxa from Bees.
 rm(rawData)
 filteredData <- filteredData %>%
   select(-totalAbundance)
@@ -70,9 +69,11 @@ tmp1 <- tmp1[order(
 # which number corresponds to which site / month / Order
 site.key <- data.frame(Site = sort(unique(tmp1$Exact.Site)))
 site.key$Site_ID <- as.numeric(factor(site.key$Site))
+write.csv(site.key, "./results/siteKey.csv")
 
 month.key <- data.frame(Month_Year = sort(unique(tmp1$Month)))
 month.key$Month_ID <- as.numeric(factor(month.key$Month_Year))
+write.csv(month.key, "./results/monthKey.csv")
 
 # then replace values w/ numbers
 tmp1$Exact.Site <- as.numeric(as.factor(tmp1$Exact.Site))
@@ -104,6 +105,7 @@ filteredData %>%
   select(Order, BIN) -> orders
 order.key <- data.frame(Order = sort(unique(orders$Order)))
 order.key$Order_ID <- as.numeric(factor(order.key$Order))
+write.csv(order.key, "./results/orderKey.csv")
 # we also need an index of which species bins belong to which Orders
 orders$Order <- as.numeric(as.factor(orders$Order))
 orders$BIN <- as.numeric(as.factor(orders$BIN))
@@ -121,10 +123,6 @@ metData %>%
   filter(between(month, as.Date("2023-02-01"), as.Date("2023-10-01"))) -> metData
 metData$site.name <- as.numeric(as.factor(metData$site.name))
 metData$month <- as.numeric(as.factor(metData$month))
-metData$wind_speed_ms_mean <- scale(metData$wind_speed_ms_mean)
-metData$max_relative_humidity_mean <- scale(metData$max_relative_humidity_mean)
-metData$max_air_temperature_mean_K <- scale(metData$max_air_temperature_mean_K)
-metData$precipitation_accumulation_mm <- scale(metData$precipitation_accumulation_mm)
 
 filteredData %>%
   select(Exact.Site, Month, PM2.5, n_smoke) %>%
@@ -178,16 +176,6 @@ for(i in 1:nrow(covariates)){
   ] <- covariates$PC2[i]
 }
 PC2[is.na(PC2)] <- 0
-# wind speed
-wind <- array(data = NA, dim = c(max(covariates$Exact.Site),
-                                 max(covariates$Month)))
-for(i in 1:nrow(covariates)){
-  wind[
-    covariates$Exact.Site[i],
-    covariates$Month[i]
-  ] <- covariates$wind_speed_ms_mean[i]
-}
-wind[is.na(wind)] <- 0
 
 #### Run Model ####
 data_list <- list(
@@ -202,14 +190,15 @@ data_list <- list(
   PC1 = PC1,
   PC2 = PC2
 )
+save(data_list, file = "./results/data_list.Rdata") # save the data_list for later
 
 source("./functions/inits.R")
 
 library(runjags)
 # I guess my JAGS isn't stored where {runjags} expects it to be, so I have to 
 # tell it where to look
-# runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
-runjags.options(jagspath = "C:/Users/Rachel/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
+runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
+# runjags.options(jagspath = "C:/Users/Rachel/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c(# hyper-hyperpriors for abundance
@@ -234,14 +223,17 @@ my_mod <- runjags::run.jags(
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 50000,
-  sample = 150000,
+  burnin = 120000,
+  sample = 100000,
   adapt = 5000,
   modules = "glm",
   thin = 20,
   method = "parallel",
   jags = runjags.getOption("jagspath")
 )
+# If we try to look at the taxa-level variables, we'll max out the printed rows
+# of the results, so I'm going to look at just the hyperparameters and Order-
+# level variables to check convergence
 varSum <- c("mu.omega","tau.omega",
             "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
             "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
@@ -254,10 +246,5 @@ varSum <- c("mu.omega","tau.omega",
 results <- runjags::add.summary(my_mod, vars = varSum)
 results
 plot(my_mod, plot.type = "trace", vars = varSum)
+# Model looks good, so let's save it for later
 saveRDS(my_mod, "./modelResults.RDS") 
-
-# mc <- coda::as.mcmc(my_mod)
-# mc <- as.matrix(mc)
-# set.seed(123)
-# source("./functions/split_mcmc.R")
-# mc <- split_mcmc(mc)
