@@ -109,16 +109,16 @@ model{
   # Derived Parameters
   for(j in 1:nSite){
     for(t in 1:nMonth){
-      Nsite[j,t]<-sum(N[,j,t]) # abundance of all insects at each site each month
+      Nsite[j,t] <- sum(N[,j,t]) # abundance of all insects at each site each month
     }
   }
-  # for(i in 1:nTaxa){
-  #   for(j in 1:nSite){
-  #     for(t in 1:nMonth){
-  #       p[i,j,t] <- N[i,j,t]/sum(N[,j,t])
-  #     }
-  #   }
-  # }
+  for(i in 1:nTaxa){
+    for(j in 1:nSite){
+      for(t in 1:nMonth){
+        P[i,j,t] <- N[i,j,t]/(sum(N[,j,t])) # proportion of individuals of each species
+      }
+    }
+  }
   # for(j in 1:nSite){
   #   for(t in 1:nMonth){
   #     H[j,t] <- -1*sum(p[,j,t]) # Shannon's diversity for each site each month

@@ -20,8 +20,8 @@ filteredData <- rawData %>%
   # grouping by BIN and calculating total Abundance
   group_by(BIN) %>%
   mutate(totalAbundance = sum(Abundnace)) %>%
-  # then, lastly, removing singletons 
-  filter_out(totalAbundance < 95) #minimum for at least 3 Taxa from Bees.
+  # then, lastly, removing rare taxa 
+  filter_out(totalAbundance < 160)
 rm(rawData)
 filteredData <- filteredData %>%
   select(-totalAbundance)
@@ -196,9 +196,10 @@ source("./functions/inits.R")
 
 library(runjags)
 # I guess my JAGS isn't stored where {runjags} expects it to be, so I have to 
-# tell it where to look
-runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
-# runjags.options(jagspath = "C:/Users/Rachel/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin")
+# tell it where to look. this code may not be necessary if your JAGS is in the
+# normal install location
+runjags.options(jagspath = "/usr/local/bin/jags") # personal computer
+# runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin") # work computer
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c(# hyper-hyperpriors for abundance
@@ -218,13 +219,13 @@ my_mod <- runjags::run.jags(
     "mu.alpha0","tau.alpha0","mu.alpha2","tau.alpha2",
     "mu.alpha3","tau.alpha3",
     # derived parameters
-    "Nsite"#,"H"
+    "Nsite","P"
     ),
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 120000,
-  sample = 100000,
+  burnin = 150000,
+  sample = 60000,
   adapt = 5000,
   modules = "glm",
   thin = 20,
@@ -247,4 +248,4 @@ results <- runjags::add.summary(my_mod, vars = varSum)
 results
 plot(my_mod, plot.type = "trace", vars = varSum)
 # Model looks good, so let's save it for later
-saveRDS(my_mod, "./modelResults.RDS") 
+saveRDS(my_mod, "./results/modelResults.RDS") 
