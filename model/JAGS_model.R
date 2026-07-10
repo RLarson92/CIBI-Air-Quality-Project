@@ -116,12 +116,13 @@ model{
     for(j in 1:nSite){
       for(t in 1:nMonth){
         P[i,j,t] <- N[i,j,t]/(sum(N[,j,t])) # proportion of individuals of each species
+        H[j,t] <- -1*sum(P[,j,t]) # Shannon's diversity for each site each month
       }
     }
   }
   # for(j in 1:nSite){
   #   for(t in 1:nMonth){
-  #     H[j,t] <- -1*sum(p[,j,t]) # Shannon's diversity for each site each month
+  #     H[j,t] <- -1*sum(P[,j,t]) # Shannon's diversity for each site each month
   #   }
   # }
 }

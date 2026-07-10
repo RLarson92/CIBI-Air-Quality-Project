@@ -203,29 +203,29 @@ runjags.options(jagspath = "/usr/local/bin/jags") # personal computer
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
   monitor = c(# hyper-hyperpriors for abundance
-    "mu.omega","tau.omega",
-    "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
-    "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
-    "mu.phi","tau.phi",
+    "mu.omega","sig.omega",
+    "mu.mu.beta0","mu.sig.beta0","mu.mu.beta1","mu.sig.beta1",
+    "mu.mu.beta2","mu.sig.beta2","mu.mu.beta3","mu.sig.beta3",
+    "mu.phi","sig.phi",
     # hyperpriors for order-level responses in abundance
     "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-    "tau.beta0","tau.beta1","tau.beta2","tau.beta3",
+    "sig.beta0","sig.beta1","sig.beta2","sig.beta3",
     # hyper-hyperpriors for capture/detection
-    "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
-    "mu.mu.alpha3","mu.tau.alpha3",
+    "mu.mu.alpha0","mu.sig.alpha0","mu.mu.alpha2","mu.sig.alpha2",
+    "mu.mu.alpha3","mu.sig.alpha3",
     # hyperpriors for order-level responses in capture rates
     "tau.shape.alpha0","tau.rate.alpha0",
     "tau.rate.alpha","tau.shape.alpha","tau.shape.beta","tau.rate.beta",
-    "mu.alpha0","tau.alpha0","mu.alpha2","tau.alpha2",
-    "mu.alpha3","tau.alpha3",
+    "mu.alpha0","sig.alpha0","mu.alpha2","sig.alpha2",
+    "mu.alpha3","sig.alpha3",
     # derived parameters
     "Nsite","P"
     ),
   data = data_list,
   n.chains = 3,
   inits = inits,
-  burnin = 150000,
-  sample = 60000,
+  burnin = 155000,
+  sample = 55000,
   adapt = 5000,
   modules = "glm",
   thin = 20,
@@ -235,15 +235,17 @@ my_mod <- runjags::run.jags(
 # If we try to look at the taxa-level variables, we'll max out the printed rows
 # of the results, so I'm going to look at just the hyperparameters and Order-
 # level variables to check convergence
-varSum <- c("mu.omega","tau.omega",
-            "mu.mu.beta0","mu.tau.beta0","mu.mu.beta1","mu.tau.beta1",
-            "mu.mu.beta2","mu.tau.beta2","mu.mu.beta3","mu.tau.beta3",
-            "mu.phi","tau.phi",
+varSum <- c("mu.omega","sig.omega",
+            "mu.mu.beta0","mu.sig.beta0","mu.mu.beta1","mu.sig.beta1",
+            "mu.mu.beta2","mu.sig.beta2","mu.mu.beta3","mu.sig.beta3",
+            "mu.phi","sig.phi",
             "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-            "mu.mu.alpha0","mu.tau.alpha0","mu.mu.alpha2","mu.tau.alpha2",
-            "mu.mu.alpha3","mu.tau.alpha3",
+            "sd.beta0","sd.beta1","sd.beta2","sd.beta3",
+            "mu.mu.alpha0","mu.sig.alpha0","mu.mu.alpha2","mu.sig.alpha2",
+            "mu.mu.alpha3","mu.sig.alpha3",
             "tau.shape.alpha","tau.rate.alpha","tau.shape.beta","tau.rate.beta",
-            "mu.alpha0","mu.alpha2","mu.alpha3")
+            "mu.alpha0","mu.alpha2","mu.alpha3",
+            "sd.alpha0","sd.alpha2","sd.alpha3")
 results <- runjags::add.summary(my_mod, vars = varSum)
 results
 plot(my_mod, plot.type = "trace", vars = varSum)
