@@ -2,7 +2,7 @@ library(coda)
 library(ggplot2)
 library(scales)
 # Let's load in the results
-my_mod <- readRDS("modelResults.RDS")
+my_mod <- readRDS("./results/modelResults.RDS")
 
 # The output of a JAGS model is kind of unwieldy. It's much easier to work with
 # if we break out the iterations into a matrix structure
