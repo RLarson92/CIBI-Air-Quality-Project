@@ -198,7 +198,7 @@ library(runjags)
 # I guess my JAGS isn't stored where {runjags} expects it to be, so I have to 
 # tell it where to look. this code may not be necessary if your JAGS is in the
 # normal install location
-runjags.options(jagspath = "/usr/local/bin/jags") # personal computer
+# runjags.options(jagspath = "/usr/local/bin/jags") # personal computer
 # runjags.options(jagspath = "C:/Users/rlarson/AppData/Local/Programs/JAGS/JAGS-4.3.2/x64/bin") # work computer
 my_mod <- runjags::run.jags(
   model = "./model/JAGS_model.R",
@@ -209,15 +209,15 @@ my_mod <- runjags::run.jags(
     "mu.phi","sig.phi",
     # hyperpriors for order-level responses in abundance
     "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-    "sig.beta0","sig.beta1","sig.beta2","sig.beta3",
+    "sd.beta0","sd.beta1","sd.beta2","sd.beta3",
     # hyper-hyperpriors for capture/detection
     "mu.mu.alpha0","mu.sig.alpha0","mu.mu.alpha2","mu.sig.alpha2",
     "mu.mu.alpha3","mu.sig.alpha3",
     # hyperpriors for order-level responses in capture rates
     "tau.shape.alpha0","tau.rate.alpha0",
     "tau.rate.alpha","tau.shape.alpha","tau.shape.beta","tau.rate.beta",
-    "mu.alpha0","sig.alpha0","mu.alpha2","sig.alpha2",
-    "mu.alpha3","sig.alpha3",
+    "mu.alpha0","sd.alpha0","mu.alpha2","sd.alpha2",
+    "mu.alpha3","sd.alpha3",
     # derived parameters
     "Nsite","P"
     ),
@@ -229,8 +229,8 @@ my_mod <- runjags::run.jags(
   adapt = 5000,
   modules = "glm",
   thin = 20,
-  method = "parallel",
-  jags = runjags.getOption("jagspath")
+  method = "parallel"
+  #jags = runjags.getOption("jagspath")
 )
 # If we try to look at the taxa-level variables, we'll max out the printed rows
 # of the results, so I'm going to look at just the hyperparameters and Order-
@@ -240,12 +240,10 @@ varSum <- c("mu.omega","sig.omega",
             "mu.mu.beta2","mu.sig.beta2","mu.mu.beta3","mu.sig.beta3",
             "mu.phi","sig.phi",
             "mu.beta0","mu.beta1","mu.beta2","mu.beta3",
-            "sd.beta0","sd.beta1","sd.beta2","sd.beta3",
             "mu.mu.alpha0","mu.sig.alpha0","mu.mu.alpha2","mu.sig.alpha2",
             "mu.mu.alpha3","mu.sig.alpha3",
             "tau.shape.alpha","tau.rate.alpha","tau.shape.beta","tau.rate.beta",
-            "mu.alpha0","mu.alpha2","mu.alpha3",
-            "sd.alpha0","sd.alpha2","sd.alpha3")
+            "mu.alpha0","mu.alpha2","mu.alpha3")
 results <- runjags::add.summary(my_mod, vars = varSum)
 results
 plot(my_mod, plot.type = "trace", vars = varSum)
